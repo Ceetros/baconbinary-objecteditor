@@ -2,14 +2,58 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:BaconBinary.ObjectEditor.UI"
              x:Class="BaconBinary.ObjectEditor.UI.App"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             RequestedThemeVariant="Dark">
 
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
 
+    <Application.Resources>
+        <SolidColorBrush x:Key="AppBackgroundBrush">#1E1E1E</SolidColorBrush>
+        <SolidColorBrush x:Key="PanelBackgroundBrush">#252526</SolidColorBrush>
+        <SolidColorBrush x:Key="BorderBrush">#3E3E42</SolidColorBrush>
+        <SolidColorBrush x:Key="HeaderBackgroundBrush">#333333</SolidColorBrush>
+        <SolidColorBrush x:Key="AccentBrush">#007ACC</SolidColorBrush>
+        <SolidColorBrush x:Key="AccentHoverBrush">#1C97EA</SolidColorBrush>
+        <SolidColorBrush x:Key="TextPrimaryBrush">#CCCCCC</SolidColorBrush>
+        <SolidColorBrush x:Key="TextSecondaryBrush">#9D9D9D</SolidColorBrush>
+        
+        <VisualBrush x:Key="CheckerboardBrush" TileMode="Tile" SourceRect="0,0,16,16" DestinationRect="0,0,16,16">
+            <VisualBrush.Visual>
+                <Grid Width="16" Height="16" Background="#202020">
+                    <Path Data="M0,0 L8,0 L8,8 L0,8 Z M8,8 L16,8 L16,16 L8,16 Z" Fill="#2A2A2A" />
+                </Grid>
+            </VisualBrush.Visual>
+        </VisualBrush>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
+
+        <Style Selector="Border.Panel">
+            <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Margin" Value="2"/>
+        </Style>
+        
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Margin" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="#37373D"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        
+        <Style Selector="CheckBox">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="Margin" Value="0,2"/>
+        </Style>
+
     </Application.Styles>
 </Application>

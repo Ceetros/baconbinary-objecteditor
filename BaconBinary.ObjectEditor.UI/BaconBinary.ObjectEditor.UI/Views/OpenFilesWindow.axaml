@@ -1,0 +1,97 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BaconBinary.ObjectEditor.UI.ViewModels"
+        x:Class="BaconBinary.ObjectEditor.UI.Views.OpenFilesWindow"
+        x:DataType="vm:OpenFilesViewModel"
+        Title="Open Asset Files"
+        Width="500" Height="500"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#3C3C3C" Foreground="#E0E0E0">
+
+    <Window.Styles>
+        <Style Selector="Border.GroupBox">
+            <Setter Property="BorderBrush" Value="#606060"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="10,15,10,10"/>
+            <Setter Property="Margin" Value="0,10,0,0"/>
+        </Style>
+        <Style Selector="TextBlock.GroupHeader">
+            <Setter Property="Background" Value="#3C3C3C"/>
+            <Setter Property="Margin" Value="10,-8,0,0"/>
+            <Setter Property="Padding" Value="5,0"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Foreground" Value="#A0A0A0"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto, Auto, Auto, Auto, *, Auto" Margin="10">
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="Client Folder:" Margin="0,0,0,2"/>
+            <Grid ColumnDefinitions="*, 80">
+                <TextBox Text="{Binding ClientPath}" Background="#2D2D2D" BorderBrush="#505050" Foreground="White"/>
+                <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseCommand}" Margin="5,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+            </Grid>
+        </StackPanel>
+
+        <Grid Grid.Row="1" Margin="0,10,0,0">
+            <Border Classes="GroupBox">
+                <ComboBox ItemsSource="{Binding Versions}" SelectedItem="{Binding SelectedVersion}" HorizontalAlignment="Stretch" Background="#2D2D2D"/>
+            </Border>
+            <TextBlock Classes="GroupHeader" Text="Version"/>
+        </Grid>
+
+        <Grid Grid.Row="3" Margin="0,5,0,0">
+            <Border Classes="GroupBox">
+                <StackPanel Spacing="5">
+                    <CheckBox Content="Extended" IsChecked="{Binding IsExtended}" />
+                    <CheckBox Content="Transparency" IsChecked="{Binding IsTransparency}" />
+                    <CheckBox Content="Improved animations" IsChecked="{Binding IsFrameDurations}" />
+                    <CheckBox Content="Frame Groups" IsChecked="{Binding IsFrameGroups}" />
+                </StackPanel>
+            </Border>
+            <TextBlock Classes="GroupHeader" Text="Options"/>
+        </Grid>
+
+        <Grid Grid.Row="4" Margin="0,5,0,0" RowDefinitions="*, *">
+            <Grid Grid.Row="0">
+                <Border Classes="GroupBox">
+                    <StackPanel Margin="10,0,0,0" TextElement.Foreground="Gray" TextElement.FontSize="11">
+                        <TextBlock Text="Signature: (Pending)"/>
+                        <TextBlock Text="Items: 0"/>
+                        <TextBlock Text="Outfits: 0"/>
+                        <TextBlock Text="Effects: 0"/>
+                        <TextBlock Text="Missiles: 0"/>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="GroupHeader" Text="DAT"/>
+            </Grid>
+
+            <Grid Grid.Row="1">
+                <Border Classes="GroupBox">
+                    <StackPanel Margin="10,0,0,0" TextElement.Foreground="Gray" TextElement.FontSize="11">
+                        <TextBlock Text="Signature: (Pending)"/>
+                        <TextBlock Text="Sprites: 0"/>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="GroupHeader" Text="SPR"/>
+            </Grid>
+        </Grid>
+
+        <Grid Grid.Row="5" ColumnDefinitions="*, Auto, Auto" Margin="0,15,0,0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border IsVisible="{Binding HasError}" Background="#D32F2F" CornerRadius="10" Width="16" Height="16" Margin="0,0,5,0">
+                    <TextBlock Text="!" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="10"/>
+                </Border>
+                <TextBlock Text="{Binding StatusMessage}" FontSize="11" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <Button Grid.Column="1" Content="Load" Command="{Binding LoadCommand}" CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" Width="80" HorizontalContentAlignment="Center" Margin="0,0,5,0"/>
+            <Button Grid.Column="2" Content="Cancel" Command="{Binding CancelCommand}" CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" Width="80" HorizontalContentAlignment="Center"/>
+        </Grid>
+    </Grid>
+</Window>
