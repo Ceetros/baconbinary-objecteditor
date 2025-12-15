@@ -125,5 +125,3 @@ However, to foster collaboration and extensibility, we will provide an open-sour
 If you find `BaconBinary.ObjectEditor` useful and want to support its development, consider making a donation. Your support helps cover development costs and encourages the continuous improvement of the tool.
 
 [![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=5Q8YX497C9QWU)
-
-**Please replace `SEU_ID_AQUI` with your actual PayPal button ID.**
