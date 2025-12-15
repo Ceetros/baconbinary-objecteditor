@@ -93,6 +93,17 @@ Contribuições para o desenvolvimento do BaconBinary.ObjectEditor são bem-vind
 4.  Faça o push para a branch (`git push origin feature/nova-feature`).
 5.  Abra um Pull Request.
 
+## Apoiadores e Inspiração
+
+Este projeto não seria possível sem o apoio e a inspiração de diversas fontes da comunidade:
+
+-   **PokeWorldOnline:** Projeto que contribuiu para a ideia inicial da criação da ferramenta.
+-   **Ninja Chronicles:** Projeto ativo que apoia e utiliza o `BaconBinary.ObjectEditor`.
+-   **Object Builder:** Ferramenta que serviu como principal inspiração para a interface de usuário (UI). 
+-   **Ceetros:** Criador do projeto.
+
+*Caso queira seu nick/projeto como apoiador, entre em contato ou faça um Pull Request com alguma correção e/ou feature.*
+
 ## Nota sobre o Código-Fonte
 
 É importante notar que, embora o núcleo do `BaconBinary.ObjectEditor` seja open-source, certas funcionalidades avançadas, como o suporte à criptografia de clientes mais recentes, serão mantidas como módulos de código fechado.
