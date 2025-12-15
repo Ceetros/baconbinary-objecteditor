@@ -4,6 +4,13 @@
 
 O BaconBinary.ObjectEditor é um editor de arquivos `.dat` e `.spr` para o jogo Tibia, desenvolvido como parte do ecossistema Open Tibia. Construído com a moderna stack .NET, este projeto visa oferecer uma alternativa mais rápida e performática ao tradicional Object Builder. A ferramenta foi projetada para fornecer uma interface robusta e eficiente para a manipulação de assets do jogo, permitindo a inspeção e modificação de itens, criaturas e outros elementos gráficos.
 
+## Features
+
+O `BaconBinary.ObjectEditor` já implementa funcionalidades essenciais para a edição de assets do Tibia:
+
+-   **Suporte a Offsets Negativos:** Manipulação precisa do posicionamento dos sprites.
+-   **Suporte a Transparência:** Renderização correta de sprites com canais alfa.
+
 ## Arquitetura e Performance
 
 Um dos pilares do `BaconBinary.ObjectEditor` é sua arquitetura totalmente assíncrona. Todas as operações de I/O, como leitura e escrita dos arquivos `.dat` e `.spr`, são implementadas utilizando o padrão `async/await` do C#. Isso garante que a interface do usuário permaneça responsiva e fluida, mesmo ao manipular arquivos de grande volume. O processamento em background evita travamentos e proporciona uma experiência de usuário significativamente superior em comparação com abordagens síncronas tradicionais.
@@ -24,10 +31,12 @@ Isso permite que os desenvolvedores e usuários utilizem a ferramenta em seu amb
 
 ## Roadmap Futuro
 
-O projeto continua em evolução, com planos de expandir o suporte para novas plataformas:
+O projeto continua em evolução, com planos de expandir funcionalidades e o suporte para novas plataformas:
 
--   **Browser (WebAssembly):** Está em nosso roadmap o porte da aplicação para rodar diretamente no navegador utilizando Blazor e WebAssembly. Isso eliminará a necessidade de instalação e permitirá o acesso à ferramenta de qualquer lugar.
--   **Mobile (iOS/Android):** Futuramente, pretendemos estender o suporte para dispositivos móveis através do .NET MAUI, possibilitando a edição e gerenciamento de assets diretamente de smartphones e tablets.
+-   **Edição de Sprites:** Implementação de ferramentas avançadas para edição gráfica diretamente na aplicação.
+-   **Suporte a Criptografia:** Capacidade de lidar com arquivos de assets criptografados de diferentes versões do cliente.
+-   **Browser (WebAssembly):** Porte da aplicação para rodar diretamente no navegador utilizando Blazor e WebAssembly, eliminando a necessidade de instalação.
+-   **Mobile (iOS/Android):** Extensão do suporte para dispositivos móveis através do .NET MAUI, possibilitando a edição de assets em smartphones e tablets.
 
 ## Começando
 
@@ -38,8 +47,8 @@ Para compilar e executar este projeto, é necessário ter o SDK do .NET instalad
 Para obter o código-fonte, clone o repositório usando o seguinte comando:
 
 ```bash
-git clone --recursive https://github.com/seu-usuario/BaconBinary.ObjectEditor.git
-cd BaconBinary.ObjectEditor
+git clone --recursive https://github.com/Ceetros/baconbinary-objecteditor.git
+cd baconbinary-objecteditor
 ```
 
 Se você já clonou o repositório sem a flag `--recursive`, pode inicializar os submódulos com o seguinte comando:
@@ -83,3 +92,17 @@ Contribuições para o desenvolvimento do BaconBinary.ObjectEditor são bem-vind
 3.  Faça o commit de suas alterações (`git commit -am 'Adiciona nova feature'`).
 4.  Faça o push para a branch (`git push origin feature/nova-feature`).
 5.  Abra um Pull Request.
+
+## Nota sobre o Código-Fonte
+
+É importante notar que, embora o núcleo do `BaconBinary.ObjectEditor` seja open-source, certas funcionalidades avançadas, como o suporte à criptografia de clientes mais recentes, serão mantidas como módulos de código fechado.
+
+No entanto, para fomentar a colaboração e a extensibilidade, forneceremos um template open-source que servirá como base para que a comunidade possa desenvolver e integrar suas próprias implementações de criptografia como módulos externos.
+
+## Ecossistema BaconBinary
+
+O `BaconBinary.ObjectEditor` é a primeira de uma série de ferramentas que utilizarão um core compartilhado para a manipulação de assets do Tibia. O plano é expandir este ecossistema com os seguintes projetos:
+
+-   **BaconBinary.MapEditor:** Um editor de mapas completo, construído sobre a mesma base tecnológica.
+-   **BaconBinary.ItemEditor:** Uma ferramenta dedicada à edição de itens e suas propriedades.
+-   **BaconBinary.GClient:** Um cliente de Tibia desenvolvido em Godot, atualmente em fase de avaliação de arquitetura, que consumirá as bibliotecas do core para interagir com os arquivos do jogo.
