@@ -1,91 +1,91 @@
-# Especificação dos Formatos de Arquivo BSUIT (.meta e .asset)
+# BSUIT File Format Specification (.meta and .asset)
 
-Este documento descreve a arquitetura dos formatos de arquivo `.meta` e `.asset`, projetados para substituir os formatos `.dat` e `.spr` com foco em performance, extensibilidade e segurança.
+This document describes the architecture of the `.meta` and `.asset` file formats, designed to replace `.dat` and `.spr` formats with a focus on performance, extensibility, and security.
 
-## Segurança e Criptografia
+## Security and Encryption
 
-Todos os arquivos `.meta` e `.asset` suportam criptografia nativa.
+All `.meta` and `.asset` files support native encryption.
 
-### Estrutura do Arquivo Criptografado
+### Encrypted File Structure
 
-Para garantir que o arquivo possa ser identificado antes da descriptografia, o cabeçalho inicial permanece em texto claro.
+To ensure the file can be identified before decryption, the initial header remains in plain text.
 
-| Campo            | Tipo      | Descrição                                                                 |
+| Field            | Type      | Description                                                               |
 |------------------|-----------|---------------------------------------------------------------------------|
-| `Signature`      | `char[]`  | "BSUIT" (5 bytes) ou "BASSET" (6 bytes).                                  |
-| `FormatVersion`  | `byte`    | Versão da estrutura do arquivo.                                           |
-| `EncryptionType` | `byte`    | Tipo de criptografia: `0x00` = Nenhuma, `0x01` = AES-256-CBC.             |
-| `IV`             | `byte[16]`| Vetor de Inicialização (IV) para o AES. Gerado aleatoriamente no salvamento.|
-| `EncryptedData`  | `byte[]`  | O restante do arquivo (Lookup Table + Data Blocks), criptografado.        |
+| `Signature`      | `char[]`  | "BSUIT" (5 bytes) or "BASSET" (6 bytes).                                  |
+| `FormatVersion`  | `byte`    | File structure version.                                                   |
+| `EncryptionType` | `byte`    | Encryption type: `0x00` = None, `0x01` = AES-256-CBC.                     |
+| `IV`             | `byte[16]`| Initialization Vector (IV) for AES. Randomly generated upon saving.       |
+| `EncryptedData`  | `byte[]`  | The rest of the file (Lookup Table + Data Blocks), encrypted.             |
 
-### Algoritmo de Criptografia (AES-256-CBC)
+### Encryption Algorithm (AES-256-CBC)
 
-- **Algoritmo:** AES (Advanced Encryption Standard).
-- **Modo:** CBC (Cipher Block Chaining).
+- **Algorithm:** AES (Advanced Encryption Standard).
+- **Mode:** CBC (Cipher Block Chaining).
 - **Padding:** PKCS7.
-- **Chave (Key):** 32 bytes (256 bits). Fornecida pelo usuário.
-- **IV:** 16 bytes (128 bits). Armazenado no cabeçalho do arquivo (texto claro).
+- **Key:** 32 bytes (256 bits). Provided by the user.
+- **IV:** 16 bytes (128 bits). Stored in the file header (plain text).
 
 ---
 
-## 1. Arquivo de Metadados (`project.meta`)
+## 1. Metadata File (`project.meta`)
 
-Substitui o `.dat`. Contém todas as informações dos objetos, exceto os dados de pixel.
+Replaces `.dat`. Contains all object information except pixel data.
 
-### Corpo do Arquivo (Pós-Descriptografia)
+### File Body (Post-Decryption)
 
-| Campo                 | Tipo          | Descrição                                                              |
+| Field                 | Type          | Description                                                            |
 |-----------------------|---------------|------------------------------------------------------------------------|
-| **Header Interno**    |               |                                                                        |
-| `ClientVersionMajor`  | `byte`        | Versão principal do cliente (ex: 10 para 10.98).                       |
-| `ClientVersionMinor`  | `byte`        | Versão secundária do cliente (ex: 98 para 10.98).                      |
-| `FeatureFlags`        | `byte`        | Bitmask de features globais (ver tabela abaixo).                       |
-| **Lookup Table**      |               |                                                                        |
-| `ItemCount`           | `uint`        | Contagem total de Itens.                                               |
-| `OutfitCount`         | `uint`        | Contagem total de Outfits.                                             |
-| `EffectCount`         | `uint`        | Contagem total de Effects.                                             |
-| `MissileCount`        | `uint`        | Contagem total de Missiles.                                            |
-| **Asset Mapping**     |               |                                                                        |
-| `AssetFileCount`      | `uint`        | Número de arquivos .asset gerados.                                     |
+| **Internal Header** |               |                                                                        |
+| `ClientVersionMajor`  | `byte`        | Major client version (e.g., 10 for 10.98).                             |
+| `ClientVersionMinor`  | `byte`        | Minor client version (e.g., 98 for 10.98).                             |
+| `FeatureFlags`        | `byte`        | Bitmask of global features (see table below).                          |
+| **Lookup Table** |               |                                                                        |
+| `ItemCount`           | `uint`        | Total count of Items.                                                  |
+| `OutfitCount`         | `uint`        | Total count of Outfits.                                                |
+| `EffectCount`         | `uint`        | Total count of Effects.                                                |
+| `MissileCount`        | `uint`        | Total count of Missiles.                                               |
+| **Asset Mapping** |               |                                                                        |
+| `AssetFileCount`      | `uint`        | Number of generated .asset files.                                      |
 | *Loop (AssetFileCount)*|              |                                                                        |
-| `FileIndex`           | `byte`        | Índice do arquivo (0, 1, 2...).                                        |
-| `StartSpriteID`       | `uint`        | ID do primeiro sprite neste arquivo.                                   |
-| `EndSpriteID`         | `uint`        | ID do último sprite neste arquivo.                                     |
-| **Thing Addresses**   |               |                                                                        |
-| `ItemAddresses`       | `uint[]`      | Array com os offsets absolutos de cada Item no corpo descriptografado. |
-| `OutfitAddresses`     | `uint[]`      | Array com os offsets absolutos de cada Outfit.                         |
-| `EffectAddresses`     | `uint[]`      | Array com os offsets absolutos de cada Effect.                         |
-| `MissileAddresses`    | `uint[]`      | Array com os offsets absolutos de cada Missile.                        |
-| **Data Blocks**       | `byte[]`      | Concatenação dos blocos de dados de cada `Thing`.                      |
+| `FileIndex`           | `byte`        | File index (0, 1, 2...).                                               |
+| `StartSpriteID`       | `uint`        | ID of the first sprite in this file.                                   |
+| `EndSpriteID`         | `uint`        | ID of the last sprite in this file.                                    |
+| **Thing Addresses** |               |                                                                        |
+| `ItemAddresses`       | `uint[]`      | Array containing absolute offsets of each Item in the decrypted body.  |
+| `OutfitAddresses`     | `uint[]`      | Array containing absolute offsets of each Outfit.                      |
+| `EffectAddresses`     | `uint[]`      | Array containing absolute offsets of each Effect.                      |
+| `MissileAddresses`    | `uint[]`      | Array containing absolute offsets of each Missile.                     |
+| **Data Blocks** | `byte[]`      | Concatenation of data blocks for each `Thing`.                         |
 
-#### Definição de `FeatureFlags`
+#### `FeatureFlags` Definition
 
-| Bit | Flag | Descrição |
+| Bit | Flag | Description |
 |---|---|---|
-| 0 | `Extended` | Sprites são `uint` (4 bytes) em vez de `ushort` (2 bytes). |
-| 1 | `Transparency` | Sprites usam canal alfa (RGBA). |
-| 2 | `FrameDurations` | Objetos animados têm durações de frame customizadas. |
-| 3 | `FrameGroups` | Outfits usam múltiplos grupos de animação. |
+| 0 | `Extended` | Sprites are `uint` (4 bytes) instead of `ushort` (2 bytes). |
+| 1 | `Transparency` | Sprites use alpha channel (RGBA). |
+| 2 | `FrameDurations` | Animated objects have custom frame durations. |
+| 3 | `FrameGroups` | Outfits use multiple animation groups. |
 
 ---
 
-### Estrutura de um Bloco de `Thing`
+### `Thing` Block Structure
 
-Cada objeto no arquivo segue esta estrutura:
+Each object in the file follows this structure:
 
-| Campo           | Tipo     | Descrição                                                                                             |
-|-----------------|----------|-------------------------------------------------------------------------------------------------------|
-| `BlockSize`     | `uint`   | **(4 bytes)** Tamanho total do restante do bloco em bytes. Permite pular para o próximo objeto rapidamente. |
-| `CommonFlags`   | `uint`   | Bitmask de 32 bits para propriedades comuns a todos os tipos.                                         |
-| `ItemFlags`     | `uint`   | Bitmask de 32 bits para propriedades exclusivas de Items. Será 0 se não for um item.                  |
-| `ConditionalData` | `byte[]` | Bloco contendo apenas os dados das flags que estão ativadas, escritos na ordem definida abaixo.       |
-| `GroupCount`    | `byte`   | Número de `FrameGroup`s que este objeto possui.                                                       |
-| `FrameGroups`   | `byte[]` | Concatenação dos blocos de dados de cada `FrameGroup`.                                              |
+| Field             | Type     | Description                                                                                                   |
+|-------------------|----------|---------------------------------------------------------------------------------------------------------------|
+| `BlockSize`       | `uint`   | **(4 bytes)** Total size of the remaining block in bytes. Allows skipping to the next object quickly.         |
+| `CommonFlags`     | `uint`   | 32-bit Bitmask for properties common to all types.                                                            |
+| `ItemFlags`       | `uint`   | 32-bit Bitmask for properties exclusive to Items. Will be 0 if not an item.                                   |
+| `ConditionalData` | `byte[]` | Block containing only data for flags that are set, written in the order defined below.                        |
+| `GroupCount`      | `byte`   | Number of `FrameGroup`s this object possesses.                                                                |
+| `FrameGroups`     | `byte[]` | Concatenation of data blocks for each `FrameGroup`.                                                           |
 
-#### Definição das Flags e Ordem dos Dados Condicionais
+#### Flags Definition and Conditional Data Order
 
 **CommonFlags (uint):**
-| Bit | Flag | Dados Condicionais (Tipo) |
+| Bit | Flag | Conditional Data (Type) |
 |---|---|---|
 | 0 | AnimateAlways | - |
 | 1 | LyingObject | - |
@@ -111,7 +111,7 @@ Cada objeto no arquivo segue esta estrutura:
 | 21 | IsHorizontal | - |
 
 **ItemFlags (uint):**
-| Bit | Flag | Dados Condicionais (Tipo) |
+| Bit | Flag | Conditional Data (Type) |
 |---|---|---|
 | 0 | IsGround | `ushort GroundSpeed` |
 | 1 | IsGroundBorder | - |
@@ -137,50 +137,50 @@ Cada objeto no arquivo segue esta estrutura:
 
 ---
 
-### Estrutura de um Bloco de `FrameGroup`
+### `FrameGroup` Block Structure
 
-| Campo         | Tipo     | Descrição                                                              |
-|---------------|----------|------------------------------------------------------------------------|
-| `Width`       | `byte`   | Largura do grupo em tiles.                                             |
-| `Height`      | `byte`   | Altura do grupo em tiles.                                              |
-| `Layers`      | `byte`   | Número de camadas.                                                     |
-| `PatternX`    | `byte`   | Número de variações no eixo X.                                         |
-| `PatternY`    | `byte`   | Número de variações no eixo Y.                                         |
-| `PatternZ`    | `byte`   | Número de variações no eixo Z.                                         |
-| `Frames`      | `byte`   | Número de quadros de animação.                                         |
-| `AnimData`    | `byte[]` | **Se Frames > 1:** `byte Mode`, `uint LoopCount`, `byte StartFrame`, `uint[Frames*2] Durations`. |
-| `SpriteCount` | `uint`   | Contagem total de sprites neste grupo.                                 |
-| `SpriteIDs`   | `uint[]` | Array com os IDs dos sprites.                                          |
+| Field         | Type     | Description                                                                                            |
+|---------------|----------|--------------------------------------------------------------------------------------------------------|
+| `Width`       | `byte`   | Group width in tiles.                                                                                  |
+| `Height`      | `byte`   | Group height in tiles.                                                                                 |
+| `Layers`      | `byte`   | Number of layers.                                                                                      |
+| `PatternX`    | `byte`   | Number of variations on the X axis.                                                                    |
+| `PatternY`    | `byte`   | Number of variations on the Y axis.                                                                    |
+| `PatternZ`    | `byte`   | Number of variations on the Z axis.                                                                    |
+| `Frames`      | `byte`   | Number of animation frames.                                                                            |
+| `AnimData`    | `byte[]` | **If Frames > 1:** `byte Mode`, `uint LoopCount`, `byte StartFrame`, `uint[Frames*2] Durations`.       |
+| `SpriteCount` | `uint`   | Total count of sprites in this group.                                                                  |
+| `SpriteIDs`   | `uint[]` | Array containing sprite IDs.                                                                           |
 
 ---
 
-## 2. Arquivo de Assets (`project.asset`)
+## 2. Asset File (`project.asset`)
 
-Substitui o `.spr`. Contém apenas os dados de pixel, otimizados para acesso aleatório.
+Replaces `.spr`. Contains only pixel data, optimized for random access.
 
-### Corpo do Arquivo (Pós-Descriptografia)
+### File Body (Post-Decryption)
 
-| Campo             | Tipo     | Descrição                                                                                             |
+| Field             | Type     | Description                                                                                           |
 |-------------------|----------|-------------------------------------------------------------------------------------------------------|
-| **Header Interno**|          |                                                                                                       |
-| `CompressionType` | `byte`   | Enum: 0=Nenhum, 1=LZ4, 2=Zstd.                                                                        |
-| `SpriteCount`     | `uint`   | Contagem total de sprites **neste arquivo**.                                                          |
-| **Lookup Table**  |          |                                                                                                       |
-| `SpriteAddresses` | `uint[]` | Array com os offsets de cada sprite no arquivo. O endereço 0 indica um sprite vazio.                |
-| **Data Blocks**   | `byte[]` | Concatenação dos blocos de dados de cada sprite.                                                      |
+| **Internal Header**|          |                                                                                                       |
+| `CompressionType` | `byte`   | Enum: 0=None, 1=LZ4, 2=Zstd.                                                                          |
+| `SpriteCount`     | `uint`   | Total sprite count **in this file**.                                                                  |
+| **Lookup Table** |          |                                                                                                       |
+| `SpriteAddresses` | `uint[]` | Array containing offsets for each sprite in the file. Address 0 indicates an empty sprite.            |
+| **Data Blocks** | `byte[]` | Concatenation of data blocks for each sprite.                                                         |
 
-### Estrutura de um Bloco de Sprite
+### Sprite Block Structure
 
-- **Com Compressão (LZ4/Zstd):**
-  - `int CompressedSize`: Tamanho do bloco comprimido.
-  - `byte[] CompressedData`: Dados comprimidos.
-- **Sem Compressão:**
-  - `byte[] PixelData`: Pixels RGBA brutos (32x32x4 = 4096 bytes).
+- **With Compression (LZ4/Zstd):**
+  - `int CompressedSize`: Size of the compressed block.
+  - `byte[] CompressedData`: Compressed data.
+- **Without Compression:**
+  - `byte[] PixelData`: Raw RGBA pixels (32x32x4 = 4096 bytes).
 
-### Divisão em Múltiplos Arquivos (`.asset0`, `.asset1`, ...)
+### Splitting into Multiple Files (`.asset0`, `.asset1`, ...)
 
-- O sistema divide automaticamente os assets em múltiplos arquivos se o número de sprites exceder 1.000.000.
-- O arquivo `.meta` contém a tabela `Asset Mapping` que informa qual intervalo de IDs está em qual arquivo.
-- Exemplo:
-  - `project.asset0`: Sprites 1 a 1.000.000
-  - `project.asset1`: Sprites 1.000.001 a 2.000.000
+- The system automatically splits assets into multiple files if the number of sprites exceeds 1,000,000.
+- The `.meta` file contains the `Asset Mapping` table which indicates which ID range is in which file.
+- Example:
+  - `project.asset0`: Sprites 1 to 1,000,000
+  - `project.asset1`: Sprites 1,000,001 to 2,000,000
