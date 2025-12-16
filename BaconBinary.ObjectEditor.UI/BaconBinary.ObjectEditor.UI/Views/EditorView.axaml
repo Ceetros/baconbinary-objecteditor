@@ -157,6 +157,14 @@
                         <NumericUpDown Value="{Binding TempProps.Height}" Minimum="1" Maximum="32" LostFocus="OnResizeLostFocus"/>
                     </StackPanel>
                     <StackPanel>
+                        <TextBlock Text="Layers" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Value="{Binding TempProps.Layers}" Minimum="1" Maximum="32" LostFocus="OnResizeLostFocus"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Frames" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Value="{Binding TempProps.Frames}" Minimum="1" Maximum="255" LostFocus="OnResizeLostFocus"/>
+                    </StackPanel>
+                    <StackPanel>
                         <TextBlock Text="Pattern X" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
                         <NumericUpDown Value="{Binding TempProps.PatternX}" Minimum="1" Maximum="32" LostFocus="OnResizeLostFocus"/>
                     </StackPanel>
@@ -221,19 +229,20 @@
                                 <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding IsPlaying}"><TextBlock Text="❚❚"/><TextBlock Text="Pause"/></StackPanel>
                             </Panel>
                         </Button>
-                        <Slider Grid.Column="1" Minimum="0" Maximum="{Binding SelectedItem.Frames}" Value="{Binding CurrentFrameIndex}" Margin="20,0"/>
+                        
+                        <Grid Grid.Column="1" ColumnDefinitions="Auto, *" Margin="20,0">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" Margin="0,0,10,0">
+                                <TextBlock Text="Frame:" VerticalAlignment="Center" FontSize="11"/>
+                                <NumericUpDown Value="{Binding CurrentFrameIndex}" Minimum="0" Maximum="{Binding SelectedItem.Frames}" Width="60"/>
+                            </StackPanel>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="{Binding SelectedItem.Frames}" Value="{Binding CurrentFrameIndex}"/>
+                        </Grid>
                         
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="15">
-                            <!-- Direction/Pattern X Control (Visible for Outfits/Missiles) -->
-                            <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=!0}">
-                                <TextBlock Text="Dir (X):" VerticalAlignment="Center" FontSize="11"/>
-                                <NumericUpDown Value="{Binding CurrentDirection}" Maximum="{Binding SelectedItem.PatternX}" Minimum="0"/>
-                            </StackPanel>
-                            
                             <!-- Addon/Mount Control -->
                             <StackPanel Orientation="Horizontal" Spacing="5">
-                                <TextBlock Text="Addon (Z):" VerticalAlignment="Center" FontSize="11"/>
-                                <NumericUpDown Value="{Binding CurrentPatternZ}" Maximum="{Binding SelectedItem.PatternZ}" Minimum="0"/>
+                                <TextBlock Text="Z:" VerticalAlignment="Center" FontSize="11"/>
+                                <NumericUpDown Value="{Binding CurrentPatternZ}" Maximum="{Binding SelectedItem.PatternZ}" Minimum="0" Width="50"/>
                             </StackPanel>
                         </StackPanel>
                     </Grid>

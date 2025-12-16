@@ -42,8 +42,9 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         
         private readonly DispatcherTimer _animationTimer;
         
+        // Editor State
         [ObservableProperty] private int _currentFrameIndex = 0;
-        [ObservableProperty] private int _currentDirection = 2;
+        [ObservableProperty] private int _currentDirection = 2; // Pattern X
         [ObservableProperty] private int _currentPatternY = 0;
         [ObservableProperty] private int _currentPatternZ = 0;
         [ObservableProperty] private bool _isPlaying;
@@ -71,20 +72,21 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         public ObservableCollection<ThingType> EditorItems { get; } = new();
         public ObservableCollection<uint> SpriteIds { get; } = new();
 
+        // Pagination Properties
         [ObservableProperty] private int _mainViewCurrentPage = 1;
         [ObservableProperty] private int _mainViewTotalPages = 1;
         [ObservableProperty] private int _mainViewItemsPerPage = 200;
-        public List<int> MainViewItemsPerPageOptions { get; } = new() { 100, 200, 500, 1000 };
+        public List<int> MainViewItemsPerPageOptions { get; } = new() { 100, 200, 500, 1000, 5000, 10000 };
 
         [ObservableProperty] private int _editorCurrentPage = 1;
         [ObservableProperty] private int _editorTotalPages = 1;
         [ObservableProperty] private int _editorItemsPerPage = 100;
-        public List<int> EditorItemsPerPageOptions { get; } = new() { 100, 200, 500, 1000 };
+        public List<int> EditorItemsPerPageOptions { get; } = new() { 100, 200, 500, 1000, 5000, 10000 };
 
         [ObservableProperty] private int _currentSpritePage = 1;
         [ObservableProperty] private int _totalSpritePages = 1;
         [ObservableProperty] private int _spritesPerPage = 100;
-        public List<int> SpritesPerPageOptions { get; } = new() { 100, 200, 500, 1000 };
+        public List<int> SpritesPerPageOptions { get; } = new() { 100, 200, 500, 1000, 5000, 10000 };
 
         [ObservableProperty] private ThingType _selectedItem;
         
@@ -385,6 +387,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                     }
                     else
                     {
+                        // Set features BEFORE reading
                         ushort versionNumber = ushort.Parse(version.Replace(".", ""));
                         ClientFeatures.SetVersion(versionNumber);
                         ClientFeatures.Transparency = useTransparency;
@@ -463,10 +466,10 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                     string sprPath = Path.Combine(outputPath, "Tibia.spr");
                     await ExecuteCompilation(datPath, sprPath, false, null);
                 }
-                else
+                else // BSUIT Format
                 {
                     string metaPath = Path.Combine(outputPath, "project.meta");
-                    string assetPath = Path.Combine(outputPath, "project.asset");
+                    string assetPath = Path.Combine(outputPath, "project.asset"); // Base path for assets
                     await ExecuteCompilation(metaPath, assetPath, true, optionsVm.EncryptionKey);
                 }
             }
@@ -609,8 +612,9 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                         SpriteCount = _loadedSprFile.SpriteCount;
                         IsLoading = false;
                         
+                        // Refresh sprite palette
                         TotalSpritePages = (int)Math.Ceiling((double)SpriteCount / SpritesPerPage);
-                        LoadSpritePage(TotalSpritePages);
+                        LoadSpritePage(TotalSpritePages); // Go to last page
                     });
                 });
             }
@@ -655,102 +659,130 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
 
             try
             {
+                // Run heavy processing in background
                 await Task.Run(() =>
                 {
-                    using var imageStream = File.OpenRead(vm.FilePath);
-                    using var skBitmap = SKBitmap.Decode(imageStream);
-
-                    SKBitmap bgraBitmap = skBitmap;
-                    if (skBitmap.ColorType != SKColorType.Bgra8888)
+                    SKBitmap bgraBitmap = null;
+                    
+                    if (!string.IsNullOrEmpty(vm.FilePath))
                     {
-                        bgraBitmap = new SKBitmap(skBitmap.Width, skBitmap.Height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
-                        using var canvas = new SKCanvas(bgraBitmap);
-                        canvas.DrawBitmap(skBitmap, 0, 0);
+                        using var imageStream = File.OpenRead(vm.FilePath);
+                        using var skBitmap = SKBitmap.Decode(imageStream);
+
+                        bgraBitmap = skBitmap;
+                        if (skBitmap.ColorType != SKColorType.Bgra8888)
+                        {
+                            bgraBitmap = new SKBitmap(skBitmap.Width, skBitmap.Height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+                            using var canvas = new SKCanvas(bgraBitmap);
+                            canvas.DrawBitmap(skBitmap, 0, 0);
+                        }
                     }
 
                     var newSpritesMap = new ConcurrentDictionary<uint, Sprite>();
                     
+                    // Calculate total sprites needed for the object
                     int totalSprites = vm.Width * vm.Height * vm.Layers * vm.PatternX * vm.PatternY * vm.PatternZ * vm.Frames;
                     
                     uint startId = _loadedSprFile.SpriteCount + 1;
                     _loadedSprFile.SpriteCount += (uint)totalSprites;
 
-                    IntPtr pixelsPtr = bgraBitmap.GetPixels();
-                    int rowBytes = bgraBitmap.RowBytes;
-                    int bpp = 4;
-                    
-                    int pixelsWidth = vm.Width * 32;
-                    int pixelsHeight = vm.Height * 32;
-                    
-                    int totalX = bgraBitmap.Width / pixelsWidth;
-                    if (totalX == 0) totalX = 1;
-
                     var tasks = new List<Action>();
                     var orderedIds = new uint[totalSprites];
                     int spriteIndex = 0;
+
+                    // If we have a bitmap, prepare for extraction
+                    IntPtr pixelsPtr = IntPtr.Zero;
+                    int rowBytes = 0;
+                    int bpp = 4;
+                    int pixelsWidth = 0;
+                    int pixelsHeight = 0;
+                    int totalX = 1;
+
+                    if (bgraBitmap != null)
+                    {
+                        pixelsPtr = bgraBitmap.GetPixels();
+                        rowBytes = bgraBitmap.RowBytes;
+                        pixelsWidth = vm.Width * 32;
+                        pixelsHeight = vm.Height * 32;
+                        totalX = bgraBitmap.Width / pixelsWidth;
+                        if (totalX == 0) totalX = 1;
+                    }
 
                     for (int f = 0; f < vm.Frames; f++)
                     for (int z = 0; z < vm.PatternZ; z++)
                     for (int py = 0; py < vm.PatternY; py++)
                     for (int px = 0; px < vm.PatternX; px++)
                     for (int l = 0; l < vm.Layers; l++)
-                    for (int h = 0; h < vm.Height; h++)
-                    for (int w = 0; w < vm.Width; w++)
                     {
-                        int cf = f, cpx = px, cpy = py, cpz = z, cw = w, ch = h;
-                        int currentIndex = spriteIndex;
-                        uint currentId = startId + (uint)currentIndex;
-                        orderedIds[currentIndex] = currentId;
+                        // Calculate linear index for the block (Frame/Pattern combination)
+                        // Standard Tibia order: Frames -> Z -> Y -> X -> Layers
+                        int blockIndex = (((f * vm.PatternZ + z) * vm.PatternY + py) * vm.PatternX + px) * vm.Layers + l;
                         
-                        tasks.Add(() => 
+                        int fx = 0, fy = 0;
+                        if (bgraBitmap != null)
                         {
-                            int blockIndex = (((cf * vm.PatternZ + cpz) * vm.PatternY + cpy) * vm.PatternX + cpx) * vm.Layers + l;
-                            
-                            int fx = (blockIndex % totalX) * pixelsWidth;
-                            int fy = (blockIndex / totalX) * pixelsHeight;
+                            fx = (blockIndex % totalX) * pixelsWidth;
+                            fy = (blockIndex / totalX) * pixelsHeight;
+                        }
 
-                            int pX = (vm.Width - cw - 1) * 32;
-                            int pY = (vm.Height - ch - 1) * 32;
+                        for (int w = 0; w < vm.Width; w++)
+                        for (int h = 0; h < vm.Height; h++)
+                        {
+                            int currentIndex = spriteIndex;
+                            uint currentId = startId + (uint)currentIndex;
+                            orderedIds[currentIndex] = currentId;
                             
-                            int sheetX = fx + pX;
-                            int sheetY = fy + pY;
+                            // Capture loop variables
+                            int cw = w, ch = h;
                             
-                            if (sheetX + 32 > bgraBitmap.Width || sheetY + 32 > bgraBitmap.Height)
+                            tasks.Add(() => 
                             {
-                                var blank = new Sprite(currentId, ClientFeatures.Transparency);
-                                newSpritesMap[currentId] = blank;
-                                return;
-                            }
-
-                            byte[] rawPixels = new byte[4096];
-                            unsafe
-                            {
-                                byte* srcPtr = (byte*)pixelsPtr;
-                                for (int row = 0; row < 32; row++)
+                                byte[] rawPixels = new byte[4096];
+                                
+                                if (bgraBitmap != null)
                                 {
-                                    byte* srcRow = srcPtr + ((sheetY + row) * rowBytes) + (sheetX * bpp);
-                                    fixed (byte* destPtr = &rawPixels[row * 32 * 4])
+                                    // Calculate Sprite Position within Block (Inverted)
+                                    int pX = (vm.Width - cw - 1) * 32;
+                                    int pY = (vm.Height - ch - 1) * 32;
+                                    
+                                    int sheetX = fx + pX;
+                                    int sheetY = fy + pY;
+                                    
+                                    if (sheetX + 32 <= bgraBitmap.Width && sheetY + 32 <= bgraBitmap.Height)
                                     {
-                                        Buffer.MemoryCopy(srcRow, destPtr, 128, 128);
+                                        unsafe
+                                        {
+                                            byte* srcPtr = (byte*)pixelsPtr;
+                                            for (int row = 0; row < 32; row++)
+                                            {
+                                                byte* srcRow = srcPtr + ((sheetY + row) * rowBytes) + (sheetX * bpp);
+                                                fixed (byte* destPtr = &rawPixels[row * 32 * 4])
+                                                {
+                                                    Buffer.MemoryCopy(srcRow, destPtr, 128, 128);
+                                                }
+                                            }
+                                        }
                                     }
+                                    // Else: rawPixels remains empty (transparent)
                                 }
-                            }
+                                // Else: rawPixels remains empty (transparent) for blank object creation
 
-                            byte[] compressedData = SpriteCompressor.Compress(rawPixels, ClientFeatures.Transparency);
-                            var newSprite = new Sprite(currentId, ClientFeatures.Transparency) 
-                            { 
-                                CompressedPixels = compressedData, 
-                                Size = (ushort)compressedData.Length 
-                            };
-                            newSpritesMap[currentId] = newSprite;
-                        });
-                        
-                        spriteIndex++;
+                                byte[] compressedData = SpriteCompressor.Compress(rawPixels, ClientFeatures.Transparency);
+                                var newSprite = new Sprite(currentId, ClientFeatures.Transparency) 
+                                { 
+                                    CompressedPixels = compressedData, 
+                                    Size = (ushort)compressedData.Length 
+                                };
+                                newSpritesMap[currentId] = newSprite;
+                            });
+                            
+                            spriteIndex++;
+                        }
                     }
 
                     Parallel.Invoke(tasks.ToArray());
 
-                    if (bgraBitmap != skBitmap) bgraBitmap.Dispose();
+                    if (bgraBitmap != null) bgraBitmap.Dispose();
 
                     foreach (var id in orderedIds)
                     {
@@ -786,8 +818,8 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                         for (int py = 0; py < group.PatternY; py++)
                         for (int px = 0; px < group.PatternX; px++)
                         for (int l = 0; l < group.Layers; l++)
-                        for (int h = 0; h < group.Height; h++)
                         for (int w = 0; w < group.Width; w++)
+                        for (int h = 0; h < group.Height; h++)
                         {
                             if (idx < orderedIds.Length)
                             {
@@ -805,7 +837,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                             case ThingCategory.Missile: _loadedDatFile.Missiles[newThing.Id] = newThing; break;
                         }
 
-                        StatusText = $"Imported {orderedIds.Length} sprites and created new object ID {newThing.Id}.";
+                        StatusText = $"Created new object ID {newThing.Id} with {orderedIds.Length} sprites.";
                         SpriteCount = _loadedSprFile.SpriteCount;
                         
                         SelectedCategoryIndex = (int)vm.SelectedCategory;
@@ -877,9 +909,10 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             {
                 SelectedItem.ApplyProps(TempProps);
                 SelectedItem.FrameGroups = TempProps.FrameGroups;
-                IsDirty = false;
+                IsDirty = false; // Reset dirty state after saving
                 StatusText = $"Item {SelectedItem.Id} saved to memory.";
                 
+                // Re-clone to keep TempProps in sync with the new state of SelectedItem
                 TempProps = SelectedItem.Clone();
                 UpdateComposerSlots();
             }
@@ -947,6 +980,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
 
         private async Task LoadDataInternal(string datPath, string sprPath, string version)
         {
+            // This method is now a legacy wrapper
             await LoadProject(datPath, sprPath, version, null, false);
         }
 

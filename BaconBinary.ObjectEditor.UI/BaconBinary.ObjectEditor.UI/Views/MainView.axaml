@@ -62,7 +62,7 @@
                         </MenuItem>
                         
                         <MenuItem Header="Create">
-                            <MenuItem Header="From Sprite Sheet..." Command="{Binding OpenImportWindowCommand}"/>
+                            <MenuItem Header="New Object..." Command="{Binding OpenImportWindowCommand}"/>
                             <MenuItem Header="Import Sprites..." Command="{Binding ImportSpritesCommand}"/>
                             <MenuItem Header="New Item"/>
                             <MenuItem Header="New Outfit"/>
@@ -108,7 +108,7 @@
 
                     <!-- Properties Panel (Read-Only) -->
                     <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
-                        <ScrollViewer Padding="12">
+                        <ScrollViewer Padding="12" VerticalScrollBarVisibility="Auto">
                             <StackPanel Spacing="16" IsEnabled="False"> <!-- Disabled for Read-Only -->
                                 
                                 <!-- Global Properties -->

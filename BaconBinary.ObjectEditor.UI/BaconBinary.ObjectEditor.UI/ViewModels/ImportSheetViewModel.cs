@@ -53,7 +53,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         [RelayCommand]
         private void Confirm(Window window)
         {
-            if (!IsFileSelected) return;
+
             Success = true;
             window.Close();
         }
