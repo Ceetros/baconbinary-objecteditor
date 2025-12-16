@@ -10,7 +10,8 @@
              x:Class="BaconBinary.ObjectEditor.UI.Views.EditorView"
              x:DataType="vm:MainViewModel"
              Background="{DynamicResource AppBackgroundBrush}"
-             Foreground="{DynamicResource TextPrimaryBrush}">
+             Foreground="{DynamicResource TextPrimaryBrush}"
+             DragDrop.AllowDrop="True">
 
     <UserControl.Styles>
         <Style Selector="ListBox">
@@ -72,13 +73,21 @@
                             </ListBox>
                         </ScrollViewer>
                         <Border Grid.Row="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="8">
-                            <Grid ColumnDefinitions="Auto, *, Auto">
-                                <Button Grid.Column="0" Content="&lt; Prev" Command="{Binding ChangeItemPageCommand}" CommandParameter="prev"/>
-                                <TextBlock Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}">
-                                    <Run Text="{Binding CurrentItemPage}"/>/<Run Text="{Binding TotalItemPages}"/>
-                                </TextBlock>
-                                <Button Grid.Column="2" Content="Next &gt;" Command="{Binding ChangeItemPageCommand}" CommandParameter="next"/>
-                            </Grid>
+                            <StackPanel Spacing="5">
+                                <Grid ColumnDefinitions="Auto, Auto, *, Auto, Auto">
+                                    <Button Grid.Column="0" Content="&lt;&lt;" Command="{Binding ChangeEditorPageCommand}" CommandParameter="first"/>
+                                    <Button Grid.Column="1" Content="&lt;" Command="{Binding ChangeEditorPageCommand}" CommandParameter="prev"/>
+                                    <TextBlock Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}">
+                                        <Run Text="{Binding EditorCurrentPage}"/>/<Run Text="{Binding EditorTotalPages}"/>
+                                    </TextBlock>
+                                    <Button Grid.Column="3" Content="&gt;" Command="{Binding ChangeEditorPageCommand}" CommandParameter="next"/>
+                                    <Button Grid.Column="4" Content="&gt;&gt;" Command="{Binding ChangeEditorPageCommand}" CommandParameter="last"/>
+                                </Grid>
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <TextBlock Text="Per Page:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <ComboBox ItemsSource="{Binding EditorItemsPerPageOptions}" SelectedItem="{Binding EditorItemsPerPage}"/>
+                                </Grid>
+                            </StackPanel>
                         </Border>
                     </Grid>
                 </Border>
@@ -108,13 +117,21 @@
                             </ItemsControl>
                         </ScrollViewer>
                         <Border Grid.Row="3" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="8">
-                            <Grid ColumnDefinitions="Auto, *, Auto">
-                                <Button Grid.Column="0" Content="&lt; Prev" Command="{Binding ChangeSpritePageCommand}" CommandParameter="prev"/>
-                                <TextBlock Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}">
-                                    <Run Text="{Binding CurrentSpritePage}"/>/<Run Text="{Binding TotalSpritePages}"/>
-                                </TextBlock>
-                                <Button Grid.Column="2" Content="Next &gt;" Command="{Binding ChangeSpritePageCommand}" CommandParameter="next"/>
-                            </Grid>
+                            <StackPanel Spacing="5">
+                                <Grid ColumnDefinitions="Auto, Auto, *, Auto, Auto">
+                                    <Button Grid.Column="0" Content="&lt;&lt;" Command="{Binding ChangeSpritePageCommand}" CommandParameter="first"/>
+                                    <Button Grid.Column="1" Content="&lt;" Command="{Binding ChangeSpritePageCommand}" CommandParameter="prev"/>
+                                    <TextBlock Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}">
+                                        <Run Text="{Binding CurrentSpritePage}"/>/<Run Text="{Binding TotalSpritePages}"/>
+                                    </TextBlock>
+                                    <Button Grid.Column="3" Content="&gt;" Command="{Binding ChangeSpritePageCommand}" CommandParameter="next"/>
+                                    <Button Grid.Column="4" Content="&gt;&gt;" Command="{Binding ChangeSpritePageCommand}" CommandParameter="last"/>
+                                </Grid>
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <TextBlock Text="Per Page:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <ComboBox ItemsSource="{Binding SpritesPerPageOptions}" SelectedItem="{Binding SpritesPerPage}"/>
+                                </Grid>
+                            </StackPanel>
                         </Border>
                     </Grid>
                 </Border>
@@ -205,9 +222,19 @@
                             </Panel>
                         </Button>
                         <Slider Grid.Column="1" Minimum="0" Maximum="{Binding SelectedItem.Frames}" Value="{Binding CurrentFrameIndex}" Margin="20,0"/>
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
-                            <TextBlock Text="Addon/Mount (Z):" VerticalAlignment="Center"/>
-                            <NumericUpDown Value="{Binding CurrentPatternZ}" Maximum="{Binding SelectedItem.PatternZ}"/>
+                        
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="15">
+                            <!-- Direction/Pattern X Control (Visible for Outfits/Missiles) -->
+                            <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=!0}">
+                                <TextBlock Text="Dir (X):" VerticalAlignment="Center" FontSize="11"/>
+                                <NumericUpDown Value="{Binding CurrentDirection}" Maximum="{Binding SelectedItem.PatternX}" Minimum="0"/>
+                            </StackPanel>
+                            
+                            <!-- Addon/Mount Control -->
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="Addon (Z):" VerticalAlignment="Center" FontSize="11"/>
+                                <NumericUpDown Value="{Binding CurrentPatternZ}" Maximum="{Binding SelectedItem.PatternZ}" Minimum="0"/>
+                            </StackPanel>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -242,7 +269,7 @@
                                     <CheckBox Content="Writable" IsChecked="{Binding TempProps.IsWritable}"/>
                                     <CheckBox Content="Readable" IsChecked="{Binding TempProps.IsReadable}" Margin="0,0,5,0"/>
                                     <CheckBox Content="Fluid Container" IsChecked="{Binding TempProps.IsFluid}"/>
-                                    <CheckBox Content="Fluid" IsChecked="{Binding TempProps.IsFluid}" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Splash" IsChecked="{Binding TempProps.IsSplash}" Margin="0,0,5,0"/>
                                 </UniformGrid>
                             </StackPanel>
                             

@@ -105,7 +105,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 FileTypeFilter = new[] 
                 { 
                     new FilePickerFileType("Tibia Dat") { Patterns = new[] { "*.dat" } },
-                    new FilePickerFileType("BSUIT Meta") { Patterns = new[] { "*.meta" } },
+                    new FilePickerFileType("BaconBinary Meta") { Patterns = new[] { "*.meta" } },
                     new FilePickerFileType("All") { Patterns = new[] { "*.*" } }
                 }
             });

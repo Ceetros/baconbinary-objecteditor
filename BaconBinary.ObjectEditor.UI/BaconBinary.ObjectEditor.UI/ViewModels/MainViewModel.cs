@@ -25,6 +25,8 @@ using BaconBinary.Core.Models;
 using BaconBinary.ObjectEditor.UI.Converters;
 using BaconBinary.ObjectEditor.UI.Services;
 using BaconBinary.ObjectEditor.UI.Views;
+using SkiaSharp;
+using System.Collections.Concurrent;
 
 namespace BaconBinary.ObjectEditor.UI.ViewModels
 {
@@ -40,9 +42,8 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         
         private readonly DispatcherTimer _animationTimer;
         
-        // Editor State
         [ObservableProperty] private int _currentFrameIndex = 0;
-        [ObservableProperty] private int _currentDirection = 2; // Pattern X
+        [ObservableProperty] private int _currentDirection = 2;
         [ObservableProperty] private int _currentPatternY = 0;
         [ObservableProperty] private int _currentPatternZ = 0;
         [ObservableProperty] private bool _isPlaying;
@@ -65,17 +66,25 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         
         [ObservableProperty] private bool _isEditing = false;
 
-        public ObservableCollection<ThingType> Items { get; } = new();
+        public ObservableCollection<ThingType> AllItems { get; } = new();
+        public ObservableCollection<ThingType> MainViewItems { get; } = new();
         public ObservableCollection<ThingType> EditorItems { get; } = new();
         public ObservableCollection<uint> SpriteIds { get; } = new();
 
-        [ObservableProperty] private int _currentItemPage = 1;
-        [ObservableProperty] private int _totalItemPages = 1;
-        private const int ItemsPerPage = 100;
+        [ObservableProperty] private int _mainViewCurrentPage = 1;
+        [ObservableProperty] private int _mainViewTotalPages = 1;
+        [ObservableProperty] private int _mainViewItemsPerPage = 200;
+        public List<int> MainViewItemsPerPageOptions { get; } = new() { 100, 200, 500, 1000 };
+
+        [ObservableProperty] private int _editorCurrentPage = 1;
+        [ObservableProperty] private int _editorTotalPages = 1;
+        [ObservableProperty] private int _editorItemsPerPage = 100;
+        public List<int> EditorItemsPerPageOptions { get; } = new() { 100, 200, 500, 1000 };
 
         [ObservableProperty] private int _currentSpritePage = 1;
         [ObservableProperty] private int _totalSpritePages = 1;
-        private const int SpritesPerPage = 100;
+        [ObservableProperty] private int _spritesPerPage = 100;
+        public List<int> SpritesPerPageOptions { get; } = new() { 100, 200, 500, 1000 };
 
         [ObservableProperty] private ThingType _selectedItem;
         
@@ -94,6 +103,25 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 Interval = TimeSpan.FromMilliseconds(200) 
             };
             _animationTimer.Tick += OnAnimationTick;
+        }
+
+        partial void OnMainViewItemsPerPageChanged(int value)
+        {
+            if (_loadedDatFile != null) LoadMainViewPage(1);
+        }
+
+        partial void OnEditorItemsPerPageChanged(int value)
+        {
+            if (_loadedDatFile != null && IsEditing) LoadEditorPage(1);
+        }
+
+        partial void OnSpritesPerPageChanged(int value)
+        {
+            if (_loadedSprFile != null)
+            {
+                TotalSpritePages = (int)Math.Ceiling((double)SpriteCount / SpritesPerPage);
+                LoadSpritePage(1);
+            }
         }
 
         async partial void OnSelectedItemChanging(ThingType value)
@@ -143,14 +171,16 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
 
         private void OnAnimationTick(object sender, EventArgs e)
         {
-            if (SelectedItem == null || !SelectedItem.FrameGroups.ContainsKey(SelectedFrameGroup)) 
+            var target = IsEditing && TempProps != null ? TempProps : SelectedItem;
+            
+            if (target == null || !target.FrameGroups.ContainsKey(SelectedFrameGroup)) 
             {
                 _animationTimer.Stop();
                 IsPlaying = false;
                 return;
             }
 
-            var group = SelectedItem.FrameGroups[SelectedFrameGroup];
+            var group = target.FrameGroups[SelectedFrameGroup];
             
             int nextFrame = CurrentFrameIndex + 1;
             if (nextFrame >= group.Frames)
@@ -164,11 +194,14 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         private void UpdateComposerSlots()
         {
             ComposerSlots.Clear();
-            if (SelectedItem == null || !SelectedItem.FrameGroups.ContainsKey(SelectedFrameGroup)) return;
-
-            var group = SelectedItem.FrameGroups[SelectedFrameGroup];
             
-            bool isItem = SelectedItem.Category == ThingCategory.Item;
+            var target = IsEditing && TempProps != null ? TempProps : SelectedItem;
+            
+            if (target == null || !target.FrameGroups.ContainsKey(SelectedFrameGroup)) return;
+
+            var group = target.FrameGroups[SelectedFrameGroup];
+            
+            bool isItem = target.Category == ThingCategory.Item;
 
             if (isItem)
             {
@@ -178,7 +211,9 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 for (int y = 0; y < group.Height; y++)
                 for (int x = 0; x < group.Width; x++)
                 {
-                    uint spriteId = group.GetSpriteId(CurrentFrameIndex, px, py, CurrentPatternZ, 0, x, y);
+                    int dataX = group.Width - 1 - x;
+                    int dataY = group.Height - 1 - y;
+                    uint spriteId = group.GetSpriteId(CurrentFrameIndex, px, py, CurrentPatternZ, 0, dataX, dataY);
                     ComposerSlots.Add(new SpriteSlotViewModel(x, y, spriteId));
                 }
             }
@@ -188,7 +223,9 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 for (int y = 0; y < group.Height; y++)
                 for (int x = 0; x < group.Width; x++)
                 {
-                    uint spriteId = group.GetSpriteId(CurrentFrameIndex, CurrentDirection, 0, CurrentPatternZ, 0, x, y);
+                    int dataX = group.Width - 1 - x;
+                    int dataY = group.Height - 1 - y;
+                    uint spriteId = group.GetSpriteId(CurrentFrameIndex, CurrentDirection, 0, CurrentPatternZ, 0, dataX, dataY);
                     ComposerSlots.Add(new SpriteSlotViewModel(x, y, spriteId));
                 }
             }
@@ -201,13 +238,15 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 parameters[0] is not SpriteSlotViewModel slotVm || 
                 parameters[1] is not uint newSpriteId) return;
 
-            if (TempProps == null || !TempProps.FrameGroups.ContainsKey(SelectedFrameGroup)) return;
-            var group = TempProps.FrameGroups[SelectedFrameGroup];
+            var target = IsEditing && TempProps != null ? TempProps : SelectedItem;
+
+            if (target == null || !target.FrameGroups.ContainsKey(SelectedFrameGroup)) return;
+            var group = target.FrameGroups[SelectedFrameGroup];
 
             int index = ComposerSlots.IndexOf(slotVm);
             if (index == -1) return;
 
-            bool isItem = TempProps.Category == ThingCategory.Item;
+            bool isItem = target.Category == ThingCategory.Item;
             
             int targetPatternX, targetPatternY, targetX, targetY;
 
@@ -224,16 +263,22 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 targetPatternX = colIndexInRow / slotsPerItem;
                 
                 int slotInItem = colIndexInRow % slotsPerItem;
-                targetY = slotInItem / group.Width;
-                targetX = slotInItem % group.Width;
+                int visualY = slotInItem / group.Width;
+                int visualX = slotInItem % group.Width;
+                
+                targetX = group.Width - 1 - visualX;
+                targetY = group.Height - 1 - visualY;
             }
             else
             {
                 targetPatternX = CurrentDirection;
                 targetPatternY = 0;
                 
-                targetY = index / group.Width;
-                targetX = index % group.Width;
+                int visualY = index / group.Width;
+                int visualX = index % group.Width;
+                
+                targetX = group.Width - 1 - visualX;
+                targetY = group.Height - 1 - visualY;
             }
 
             group.SetSpriteId(CurrentFrameIndex, targetPatternX, targetPatternY, CurrentPatternZ, 0, targetX, targetY, newSpriteId);
@@ -340,7 +385,6 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                     }
                     else
                     {
-                        // Set features BEFORE reading
                         ushort versionNumber = ushort.Parse(version.Replace(".", ""));
                         ClientFeatures.SetVersion(versionNumber);
                         ClientFeatures.Transparency = useTransparency;
@@ -366,7 +410,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
 
                         TotalSpritePages = (int)Math.Ceiling((double)SpriteCount / SpritesPerPage);
                         CurrentSpritePage = 1;
-                        LoadSpritePage();
+                        LoadSpritePage(1);
 
                         StatusText = "Project loaded successfully.";
                         IsLoading = false;
@@ -419,10 +463,10 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                     string sprPath = Path.Combine(outputPath, "Tibia.spr");
                     await ExecuteCompilation(datPath, sprPath, false, null);
                 }
-                else // BSUIT Format
+                else
                 {
                     string metaPath = Path.Combine(outputPath, "project.meta");
-                    string assetPath = Path.Combine(outputPath, "project.asset"); // Base path for assets
+                    string assetPath = Path.Combine(outputPath, "project.asset");
                     await ExecuteCompilation(metaPath, assetPath, true, optionsVm.EncryptionKey);
                 }
             }
@@ -462,6 +506,322 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             });
         }
 
+        [RelayCommand]
+        private Task OpenImportWindow() => ImportSheet(null);
+
+        [RelayCommand]
+        public async Task ImportSprites()
+        {
+            if (_loadedDatFile == null || _loadedSprFile == null)
+            {
+                await ShowErrorDialog("Error", "Please open a project first.");
+                return;
+            }
+
+            var topLevel = TopLevel.GetTopLevel((Application.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow);
+            if (topLevel == null) return;
+
+            var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Select Sprite Sheet",
+                AllowMultiple = false,
+                FileTypeFilter = new[] { FilePickerFileTypes.ImageAll }
+            });
+
+            if (files.Count == 0) return;
+            string filePath = files[0].Path.LocalPath;
+
+            StatusText = "Importing sprites...";
+            IsLoading = true;
+
+            try
+            {
+                await Task.Run(() =>
+                {
+                    using var imageStream = File.OpenRead(filePath);
+                    using var skBitmap = SKBitmap.Decode(imageStream);
+
+                    SKBitmap bgraBitmap = skBitmap;
+                    if (skBitmap.ColorType != SKColorType.Bgra8888)
+                    {
+                        bgraBitmap = new SKBitmap(skBitmap.Width, skBitmap.Height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+                        using var canvas = new SKCanvas(bgraBitmap);
+                        canvas.DrawBitmap(skBitmap, 0, 0);
+                    }
+
+                    int cols = bgraBitmap.Width / 32;
+                    int rows = bgraBitmap.Height / 32;
+                    int totalSprites = cols * rows;
+                    
+                    uint startId = _loadedSprFile.SpriteCount + 1;
+                    _loadedSprFile.SpriteCount += (uint)totalSprites;
+
+                    IntPtr pixelsPtr = bgraBitmap.GetPixels();
+                    int rowBytes = bgraBitmap.RowBytes;
+                    int bpp = 4;
+
+                    var newSpritesMap = new ConcurrentDictionary<uint, Sprite>();
+
+                    Parallel.For(0, rows, y =>
+                    {
+                        for (int x = 0; x < cols; x++)
+                        {
+                            byte[] rawPixels = new byte[4096];
+                            unsafe
+                            {
+                                byte* srcPtr = (byte*)pixelsPtr;
+                                for (int row = 0; row < 32; row++)
+                                {
+                                    byte* srcRow = srcPtr + ((y * 32 + row) * rowBytes) + (x * 32 * bpp);
+                                    fixed (byte* destPtr = &rawPixels[row * 32 * 4])
+                                    {
+                                        Buffer.MemoryCopy(srcRow, destPtr, 128, 128);
+                                    }
+                                }
+                            }
+
+                            byte[] compressedData = SpriteCompressor.Compress(rawPixels, ClientFeatures.Transparency);
+                            uint currentId = startId + (uint)(y * cols + x);
+                            
+                            var newSprite = new Sprite(currentId, ClientFeatures.Transparency) 
+                            { 
+                                CompressedPixels = compressedData, 
+                                Size = (ushort)compressedData.Length 
+                            };
+                            
+                            newSpritesMap[currentId] = newSprite;
+                        }
+                    });
+
+                    if (bgraBitmap != skBitmap) bgraBitmap.Dispose();
+
+                    for (uint id = startId; id < startId + totalSprites; id++)
+                    {
+                        if (newSpritesMap.TryGetValue(id, out var sprite))
+                        {
+                            _loadedSprFile.Sprites[id] = sprite;
+                        }
+                    }
+
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        StatusText = $"Imported {totalSprites} sprites.";
+                        SpriteCount = _loadedSprFile.SpriteCount;
+                        IsLoading = false;
+                        
+                        TotalSpritePages = (int)Math.Ceiling((double)SpriteCount / SpritesPerPage);
+                        LoadSpritePage(TotalSpritePages);
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorDialog("Import Failed", ex.Message);
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => IsLoading = false);
+            }
+        }
+
+        [RelayCommand]
+        public async Task ImportSheet(string filePath)
+        {
+            if (_loadedDatFile == null || _loadedSprFile == null)
+            {
+                await ShowErrorDialog("Error", "Please open a project first.");
+                return;
+            }
+
+            var vm = new ImportSheetViewModel(filePath);
+            var dialog = new ImportSheetWindow { DataContext = vm };
+            
+            if (Application.Current.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                var owner = desktop.Windows.FirstOrDefault(w => w.IsActive && w.IsVisible) ?? desktop.MainWindow;
+                
+                if (owner != null && owner.IsVisible)
+                {
+                    await dialog.ShowDialog(owner);
+                }
+                else
+                {
+                    dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                    dialog.Show();
+                }
+            }
+
+            if (!vm.Success) return;
+
+            StatusText = "Importing sprite sheet...";
+            IsLoading = true;
+
+            try
+            {
+                await Task.Run(() =>
+                {
+                    using var imageStream = File.OpenRead(vm.FilePath);
+                    using var skBitmap = SKBitmap.Decode(imageStream);
+
+                    SKBitmap bgraBitmap = skBitmap;
+                    if (skBitmap.ColorType != SKColorType.Bgra8888)
+                    {
+                        bgraBitmap = new SKBitmap(skBitmap.Width, skBitmap.Height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+                        using var canvas = new SKCanvas(bgraBitmap);
+                        canvas.DrawBitmap(skBitmap, 0, 0);
+                    }
+
+                    var newSpritesMap = new ConcurrentDictionary<uint, Sprite>();
+                    
+                    int totalSprites = vm.Width * vm.Height * vm.Layers * vm.PatternX * vm.PatternY * vm.PatternZ * vm.Frames;
+                    
+                    uint startId = _loadedSprFile.SpriteCount + 1;
+                    _loadedSprFile.SpriteCount += (uint)totalSprites;
+
+                    IntPtr pixelsPtr = bgraBitmap.GetPixels();
+                    int rowBytes = bgraBitmap.RowBytes;
+                    int bpp = 4;
+                    
+                    int pixelsWidth = vm.Width * 32;
+                    int pixelsHeight = vm.Height * 32;
+                    
+                    int totalX = bgraBitmap.Width / pixelsWidth;
+                    if (totalX == 0) totalX = 1;
+
+                    var tasks = new List<Action>();
+                    var orderedIds = new uint[totalSprites];
+                    int spriteIndex = 0;
+
+                    for (int f = 0; f < vm.Frames; f++)
+                    for (int z = 0; z < vm.PatternZ; z++)
+                    for (int py = 0; py < vm.PatternY; py++)
+                    for (int px = 0; px < vm.PatternX; px++)
+                    for (int l = 0; l < vm.Layers; l++)
+                    for (int h = 0; h < vm.Height; h++)
+                    for (int w = 0; w < vm.Width; w++)
+                    {
+                        int cf = f, cpx = px, cpy = py, cpz = z, cw = w, ch = h;
+                        int currentIndex = spriteIndex;
+                        uint currentId = startId + (uint)currentIndex;
+                        orderedIds[currentIndex] = currentId;
+                        
+                        tasks.Add(() => 
+                        {
+                            int blockIndex = (((cf * vm.PatternZ + cpz) * vm.PatternY + cpy) * vm.PatternX + cpx) * vm.Layers + l;
+                            
+                            int fx = (blockIndex % totalX) * pixelsWidth;
+                            int fy = (blockIndex / totalX) * pixelsHeight;
+
+                            int pX = (vm.Width - cw - 1) * 32;
+                            int pY = (vm.Height - ch - 1) * 32;
+                            
+                            int sheetX = fx + pX;
+                            int sheetY = fy + pY;
+                            
+                            if (sheetX + 32 > bgraBitmap.Width || sheetY + 32 > bgraBitmap.Height)
+                            {
+                                var blank = new Sprite(currentId, ClientFeatures.Transparency);
+                                newSpritesMap[currentId] = blank;
+                                return;
+                            }
+
+                            byte[] rawPixels = new byte[4096];
+                            unsafe
+                            {
+                                byte* srcPtr = (byte*)pixelsPtr;
+                                for (int row = 0; row < 32; row++)
+                                {
+                                    byte* srcRow = srcPtr + ((sheetY + row) * rowBytes) + (sheetX * bpp);
+                                    fixed (byte* destPtr = &rawPixels[row * 32 * 4])
+                                    {
+                                        Buffer.MemoryCopy(srcRow, destPtr, 128, 128);
+                                    }
+                                }
+                            }
+
+                            byte[] compressedData = SpriteCompressor.Compress(rawPixels, ClientFeatures.Transparency);
+                            var newSprite = new Sprite(currentId, ClientFeatures.Transparency) 
+                            { 
+                                CompressedPixels = compressedData, 
+                                Size = (ushort)compressedData.Length 
+                            };
+                            newSpritesMap[currentId] = newSprite;
+                        });
+                        
+                        spriteIndex++;
+                    }
+
+                    Parallel.Invoke(tasks.ToArray());
+
+                    if (bgraBitmap != skBitmap) bgraBitmap.Dispose();
+
+                    foreach (var id in orderedIds)
+                    {
+                        if (newSpritesMap.TryGetValue(id, out var sprite))
+                        {
+                            _loadedSprFile.Sprites[id] = sprite;
+                        }
+                    }
+                    
+                    Avalonia.Threading.Dispatcher.UIThread.Invoke(() =>
+                    {
+                        uint newThingId = 0;
+                        switch (vm.SelectedCategory)
+                        {
+                            case ThingCategory.Item: newThingId = _loadedDatFile.Items.Keys.Max() + 1; break;
+                            case ThingCategory.Outfit: newThingId = _loadedDatFile.Outfits.Keys.Max() + 1; break;
+                            case ThingCategory.Effect: newThingId = _loadedDatFile.Effects.Keys.Max() + 1; break;
+                            case ThingCategory.Missile: newThingId = _loadedDatFile.Missiles.Keys.Max() + 1; break;
+                        }
+
+                        var newThing = new ThingType
+                        {
+                            Id = newThingId,
+                            Category = vm.SelectedCategory
+                        };
+                        
+                        var group = new FrameGroup();
+                        group.SetDimensions(vm.Width, vm.Height, vm.Layers, vm.PatternX, vm.PatternY, vm.PatternZ, vm.Frames);
+                        
+                        int idx = 0;
+                        for (int f = 0; f < group.Frames; f++)
+                        for (int z = 0; z < group.PatternZ; z++)
+                        for (int py = 0; py < group.PatternY; py++)
+                        for (int px = 0; px < group.PatternX; px++)
+                        for (int l = 0; l < group.Layers; l++)
+                        for (int h = 0; h < group.Height; h++)
+                        for (int w = 0; w < group.Width; w++)
+                        {
+                            if (idx < orderedIds.Length)
+                            {
+                                group.SetSpriteId(f, px, py, z, l, w, h, orderedIds[idx++]);
+                            }
+                        }
+                        
+                        newThing.FrameGroups[FrameGroupType.Default] = group;
+                        
+                        switch (vm.SelectedCategory)
+                        {
+                            case ThingCategory.Item: _loadedDatFile.Items[newThing.Id] = newThing; break;
+                            case ThingCategory.Outfit: _loadedDatFile.Outfits[newThing.Id] = newThing; break;
+                            case ThingCategory.Effect: _loadedDatFile.Effects[newThing.Id] = newThing; break;
+                            case ThingCategory.Missile: _loadedDatFile.Missiles[newThing.Id] = newThing; break;
+                        }
+
+                        StatusText = $"Imported {orderedIds.Length} sprites and created new object ID {newThing.Id}.";
+                        SpriteCount = _loadedSprFile.SpriteCount;
+                        
+                        SelectedCategoryIndex = (int)vm.SelectedCategory;
+                        RefreshList();
+                        SelectedItem = newThing;
+                        IsLoading = false;
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorDialog("Import Failed", ex.Message);
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => IsLoading = false);
+            }
+        }
+
         private async Task ShowErrorDialog(string title, string message)
         {
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
@@ -496,7 +856,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             {
                 TempProps = SelectedItem.Clone();
                 IsEditing = true;
-                LoadItemPage(1);
+                LoadEditorPage(1);
                 UpdateComposerSlots();
             }
         }
@@ -517,8 +877,11 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             {
                 SelectedItem.ApplyProps(TempProps);
                 SelectedItem.FrameGroups = TempProps.FrameGroups;
-                IsDirty = true;
+                IsDirty = false;
                 StatusText = $"Item {SelectedItem.Id} saved to memory.";
+                
+                TempProps = SelectedItem.Clone();
+                UpdateComposerSlots();
             }
         }
 
@@ -528,75 +891,116 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             int newPage = CurrentSpritePage;
             if (direction == "next" && CurrentSpritePage < TotalSpritePages) newPage++;
             else if (direction == "prev" && CurrentSpritePage > 1) newPage--;
+            else if (direction == "next100" && CurrentSpritePage + 100 <= TotalSpritePages) newPage += 100;
+            else if (direction == "prev100" && CurrentSpritePage - 100 >= 1) newPage -= 100;
+            else if (direction == "first") newPage = 1;
+            else if (direction == "last") newPage = TotalSpritePages;
+
             if (newPage != CurrentSpritePage)
             {
                 CurrentSpritePage = newPage;
-                LoadSpritePage();
+                LoadSpritePage(CurrentSpritePage);
             }
         }
         
         [RelayCommand]
-        private void ChangeItemPage(string direction)
+        private void ChangeEditorPage(string direction)
         {
-            int newPage = CurrentItemPage;
-            if (direction == "next" && CurrentItemPage < TotalItemPages) newPage++;
-            else if (direction == "prev" && CurrentItemPage > 1) newPage--;
-            if (newPage != CurrentItemPage)
+            int newPage = EditorCurrentPage;
+            if (direction == "next" && EditorCurrentPage < EditorTotalPages) newPage++;
+            else if (direction == "prev" && EditorCurrentPage > 1) newPage--;
+            else if (direction == "next100" && EditorCurrentPage + 100 <= EditorTotalPages) newPage += 100;
+            else if (direction == "prev100" && EditorCurrentPage - 100 >= 1) newPage -= 100;
+            else if (direction == "first") newPage = 1;
+            else if (direction == "last") newPage = EditorTotalPages;
+
+            if (newPage != EditorCurrentPage)
             {
-                CurrentItemPage = newPage;
-                LoadItemPage(CurrentItemPage);
+                EditorCurrentPage = newPage;
+                LoadEditorPage(EditorCurrentPage);
+            }
+        }
+        
+        [RelayCommand]
+        private void ChangeMainViewPage(string direction)
+        {
+            int newPage = MainViewCurrentPage;
+            if (direction == "next" && MainViewCurrentPage < MainViewTotalPages) newPage++;
+            else if (direction == "prev" && MainViewCurrentPage > 1) newPage--;
+            else if (direction == "next100" && MainViewCurrentPage + 100 <= MainViewTotalPages) newPage += 100;
+            else if (direction == "prev100" && MainViewCurrentPage - 100 >= 1) newPage -= 100;
+            else if (direction == "first") newPage = 1;
+            else if (direction == "last") newPage = MainViewTotalPages;
+
+            if (newPage != MainViewCurrentPage)
+            {
+                MainViewCurrentPage = newPage;
+                LoadMainViewPage(MainViewCurrentPage);
             }
         }
 
         partial void OnSelectedCategoryIndexChanged(int value)
         {
             RefreshList();
-            if (IsEditing) LoadItemPage(1);
+            if (IsEditing) LoadEditorPage(1);
         }
 
         private async Task LoadDataInternal(string datPath, string sprPath, string version)
         {
-            // This method is now a legacy wrapper
             await LoadProject(datPath, sprPath, version, null, false);
         }
 
-        private void LoadSpritePage()
+        private void LoadSpritePage(int page)
         {
             SpriteIds.Clear();
-            uint startId = (uint)((CurrentSpritePage - 1) * SpritesPerPage) + 1;
-            uint endId = Math.Min((uint)CurrentSpritePage * SpritesPerPage, (uint)SpriteCount);
+            CurrentSpritePage = page;
+            uint startId = (uint)((page - 1) * SpritesPerPage) + 1;
+            var endId = Math.Min((uint)page * SpritesPerPage, (uint)SpriteCount);
             for (uint i = startId; i <= endId; i++) SpriteIds.Add(i);
         }
 
-        private void LoadItemPage(int page)
+        private void LoadEditorPage(int page)
         {
             EditorItems.Clear();
             var sourceDict = GetCurrentCategoryDictionary();
             if (sourceDict == null) return;
 
-            TotalItemPages = (int)Math.Ceiling((double)sourceDict.Count / ItemsPerPage);
-            CurrentItemPage = page;
+            EditorTotalPages = (int)Math.Ceiling((double)sourceDict.Count / EditorItemsPerPage);
+            EditorCurrentPage = page;
 
-            var pageItems = sourceDict.Skip((page - 1) * ItemsPerPage).Take(ItemsPerPage);
-            foreach (var pair in pageItems)
+            var pageItems = sourceDict.Values.Skip((page - 1) * EditorItemsPerPage).Take(EditorItemsPerPage);
+            foreach (var thing in pageItems)
             {
-                var thing = pair.Value;
-                thing.Id = pair.Key;
                 EditorItems.Add(thing);
+            }
+        }
+        
+        private void LoadMainViewPage(int page)
+        {
+            MainViewItems.Clear();
+            
+            MainViewTotalPages = (int)Math.Ceiling((double)AllItems.Count / MainViewItemsPerPage);
+            MainViewCurrentPage = page;
+
+            var pageItems = AllItems.Skip((page - 1) * MainViewItemsPerPage).Take(MainViewItemsPerPage);
+            foreach (var thing in pageItems)
+            {
+                MainViewItems.Add(thing);
             }
         }
 
         private void RefreshList()
         {
-            Items.Clear();
+            AllItems.Clear();
             var sourceDict = GetCurrentCategoryDictionary();
             if (sourceDict == null) return;
             foreach (var pair in sourceDict)
             {
                 var thing = pair.Value;
                 thing.Id = pair.Key;
-                Items.Add(thing);
+                AllItems.Add(thing);
             }
+            LoadMainViewPage(1);
         }
 
         private IDictionary<uint, ThingType> GetCurrentCategoryDictionary()

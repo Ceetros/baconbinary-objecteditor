@@ -1,0 +1,83 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BaconBinary.ObjectEditor.UI.ViewModels"
+        x:Class="BaconBinary.ObjectEditor.UI.Views.ImportSheetWindow"
+        x:DataType="vm:ImportSheetViewModel"
+        Title="Import Sprite Sheet"
+        Width="500"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource TextPrimaryBrush}">
+
+    <Grid RowDefinitions="*, Auto" Margin="16">
+        
+        <StackPanel Grid.Row="0" Spacing="15">
+            <TextBlock Text="Create Object from Sprite Sheet" FontWeight="Bold" FontSize="16"/>
+            
+            <!-- File Selection / Drop Zone -->
+            <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="2" CornerRadius="4" Padding="20"
+                    Background="{DynamicResource PanelBackgroundBrush}"
+                    DragDrop.AllowDrop="True"
+                    DragDrop.Drop="OnDrop" 
+                    DragDrop.DragEnter="OnDragEnter" 
+                    DragDrop.DragLeave="OnDragLeave">
+                <StackPanel Spacing="10" HorizontalAlignment="Center">
+                    <TextBlock Text="Drag &amp; Drop Sprite Sheet Here" IsVisible="{Binding !IsFileSelected}"/>
+                    <TextBlock Text="{Binding FilePath}" TextTrimming="CharacterEllipsis" IsVisible="{Binding IsFileSelected}"/>
+                    <TextBlock Text="or" HorizontalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <Button Content="Browse for File..." Command="{Binding BrowseFileCommand}" 
+                            CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Configuration (Enabled only if a file is selected) -->
+            <StackPanel Spacing="15" IsEnabled="{Binding IsFileSelected}">
+                <StackPanel Spacing="5">
+                    <TextBlock Text="Category"/>
+                    <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" HorizontalAlignment="Stretch"/>
+                </StackPanel>
+
+                <UniformGrid Columns="4">
+                    <StackPanel Spacing="5" Margin="0,0,10,10">
+                        <TextBlock Text="Width"/>
+                        <NumericUpDown Value="{Binding Width}" Minimum="1" Maximum="32"/>
+                    </StackPanel>
+                    <StackPanel Spacing="5" Margin="0,0,10,10">
+                        <TextBlock Text="Height"/>
+                        <NumericUpDown Value="{Binding Height}" Minimum="1" Maximum="32"/>
+                    </StackPanel>
+                    <StackPanel Spacing="5" Margin="0,0,10,10">
+                        <TextBlock Text="Layers"/>
+                        <NumericUpDown Value="{Binding Layers}" Minimum="1" Maximum="32"/>
+                    </StackPanel>
+                    <StackPanel Spacing="5" Margin="0,0,0,10">
+                        <TextBlock Text="Frames"/>
+                        <NumericUpDown Value="{Binding Frames}" Minimum="1" Maximum="255"/>
+                    </StackPanel>
+                    
+                    <StackPanel Spacing="5" Margin="0,0,10,0">
+                        <TextBlock Text="Pattern X"/>
+                        <NumericUpDown Value="{Binding PatternX}" Minimum="1" Maximum="32"/>
+                    </StackPanel>
+                    <StackPanel Spacing="5" Margin="0,0,10,0">
+                        <TextBlock Text="Pattern Y"/>
+                        <NumericUpDown Value="{Binding PatternY}" Minimum="1" Maximum="32"/>
+                    </StackPanel>
+                    <StackPanel Spacing="5" Margin="0,0,10,0">
+                        <TextBlock Text="Pattern Z"/>
+                        <NumericUpDown Value="{Binding PatternZ}" Minimum="1" Maximum="32"/>
+                    </StackPanel>
+                </UniformGrid>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Buttons -->
+        <Grid Grid.Row="1" ColumnDefinitions="*, Auto, Auto" Margin="0,20,0,0">
+            <Button Grid.Column="1" Content="Import" Command="{Binding ConfirmCommand}" CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" Width="100" Classes="AccentButton" IsEnabled="{Binding IsFileSelected}"/>
+            <Button Grid.Column="2" Content="Cancel" Command="{Binding CancelCommand}" CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" Width="100" Margin="10,0,0,0"/>
+        </Grid>
+        
+    </Grid>
+</Window>
