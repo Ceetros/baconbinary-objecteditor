@@ -9,19 +9,49 @@
     </Application.DataTemplates>
 
     <Application.Resources>
-        <SolidColorBrush x:Key="AppBackgroundBrush">#1E1E1E</SolidColorBrush>
-        <SolidColorBrush x:Key="PanelBackgroundBrush">#252526</SolidColorBrush>
-        <SolidColorBrush x:Key="BorderBrush">#3E3E42</SolidColorBrush>
-        <SolidColorBrush x:Key="HeaderBackgroundBrush">#333333</SolidColorBrush>
-        <SolidColorBrush x:Key="AccentBrush">#007ACC</SolidColorBrush>
-        <SolidColorBrush x:Key="AccentHoverBrush">#1C97EA</SolidColorBrush>
-        <SolidColorBrush x:Key="TextPrimaryBrush">#CCCCCC</SolidColorBrush>
-        <SolidColorBrush x:Key="TextSecondaryBrush">#9D9D9D</SolidColorBrush>
+        <!-- Cyberpunk / Neon Palette -->
+        <SolidColorBrush x:Key="AppBackgroundBrush">#0D1117</SolidColorBrush>
+        <SolidColorBrush x:Key="PanelBackgroundBrush">#161B22</SolidColorBrush>
+        <SolidColorBrush x:Key="BorderBrush">#30363D</SolidColorBrush>
+        <SolidColorBrush x:Key="HeaderBackgroundBrush">#21262D</SolidColorBrush>
+        <SolidColorBrush x:Key="AccentBrush">#58A6FF</SolidColorBrush>
+        <SolidColorBrush x:Key="AccentHoverBrush">#79C0FF</SolidColorBrush>
+        <SolidColorBrush x:Key="TextPrimaryBrush">#C9D1D9</SolidColorBrush>
+        <SolidColorBrush x:Key="TextSecondaryBrush">#8B949E</SolidColorBrush>
+        <SolidColorBrush x:Key="ListItemSelectedBackgroundBrush">#1F6FEB</SolidColorBrush>
         
+        <!-- Bacon Glitch Icon Resource -->
+        <DrawingImage x:Key="BaconIcon">
+            <DrawingImage.Drawing>
+                <DrawingGroup>
+                    <!-- Cyan Layer (Shifted Left) -->
+                    <GeometryDrawing Brush="#00FFFF" Geometry="M 7,8 Q 11,4 15,8 T 23,8 M 7,16 Q 11,12 15,16 T 23,16 M 7,24 Q 11,20 15,24 T 23,24">
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#00FFFF" Thickness="3" LineCap="Round"/>
+                        </GeometryDrawing.Pen>
+                    </GeometryDrawing>
+                    
+                    <!-- Magenta Layer (Shifted Right) -->
+                    <GeometryDrawing Brush="#FF00FF" Geometry="M 9,8 Q 13,4 17,8 T 25,8 M 9,16 Q 13,12 17,16 T 25,16 M 9,24 Q 13,20 17,24 T 25,24">
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#FF00FF" Thickness="3" LineCap="Round"/>
+                        </GeometryDrawing.Pen>
+                    </GeometryDrawing>
+                    
+                    <!-- White Layer (Center) -->
+                    <GeometryDrawing Brush="#FFFFFF" Geometry="M 8,8 Q 12,4 16,8 T 24,8 M 8,16 Q 12,12 16,16 T 24,16 M 8,24 Q 12,20 16,24 T 24,24">
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#FFFFFF" Thickness="3" LineCap="Round"/>
+                        </GeometryDrawing.Pen>
+                    </GeometryDrawing>
+                </DrawingGroup>
+            </DrawingImage.Drawing>
+        </DrawingImage>
+
         <VisualBrush x:Key="CheckerboardBrush" TileMode="Tile" SourceRect="0,0,16,16" DestinationRect="0,0,16,16">
             <VisualBrush.Visual>
-                <Grid Width="16" Height="16" Background="#202020">
-                    <Path Data="M0,0 L8,0 L8,8 L0,8 Z M8,8 L16,8 L16,16 L8,16 Z" Fill="#2A2A2A" />
+                <Grid Width="16" Height="16" Background="#161B22">
+                    <Path Data="M0,0 L8,0 L8,8 L0,8 Z M8,8 L16,8 L16,16 L8,16 Z" Fill="#21262D" />
                 </Grid>
             </VisualBrush.Visual>
         </VisualBrush>
@@ -34,17 +64,17 @@
             <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Margin" Value="2"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Margin" Value="4"/>
         </Style>
         
         <Style Selector="ListBoxItem">
-            <Setter Property="Padding" Value="2"/>
-            <Setter Property="Margin" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="CornerRadius" Value="6"/>
         </Style>
         <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
-            <Setter Property="Background" Value="#37373D"/>
+            <Setter Property="Background" Value="{DynamicResource ListItemSelectedBackgroundBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
@@ -52,7 +82,7 @@
         <Style Selector="CheckBox">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Margin" Value="0,4"/>
         </Style>
 
     </Application.Styles>

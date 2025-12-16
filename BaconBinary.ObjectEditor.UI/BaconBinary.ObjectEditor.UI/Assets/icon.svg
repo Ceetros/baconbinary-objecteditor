@@ -1,0 +1,43 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="glitch" x="-20%" y="-20%" width="140%" height="140%">
+      <feOffset result="offOut" in="SourceGraphic" dx="-1" dy="0" />
+      <feColorMatrix result="matrixOut" in="offOut" type="matrix"
+        values="1 0 0 0 0
+                0 0 0 0 0
+                0 0 1 0 0
+                0 0 0 1 0" />
+      <feBlend in="SourceGraphic" in2="matrixOut" mode="normal" />
+    </filter>
+  </defs>
+
+  <!-- Background Glow -->
+  <circle cx="16" cy="16" r="14" fill="#0D1117" stroke="#58A6FF" stroke-width="1" opacity="0.5"/>
+
+  <!-- Glitch Layer (Cyan Shift) -->
+  <g transform="translate(-1, 0)" opacity="0.7">
+    <path d="M8,8 Q12,4 16,8 T24,8" fill="none" stroke="#00FFFF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M8,16 Q12,12 16,16 T24,16" fill="none" stroke="#00FFFF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M8,24 Q12,20 16,24 T24,24" fill="none" stroke="#00FFFF" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Glitch Layer (Magenta Shift) -->
+  <g transform="translate(1, 0)" opacity="0.7">
+    <path d="M8,8 Q12,4 16,8 T24,8" fill="none" stroke="#FF00FF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M8,16 Q12,12 16,16 T24,16" fill="none" stroke="#FF00FF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M8,24 Q12,20 16,24 T24,24" fill="none" stroke="#FF00FF" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Main Bacon Strips (White/Neon) -->
+  <g>
+    <path d="M8,8 Q12,4 16,8 T24,8" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+    <path d="M8,16 Q12,12 16,16 T24,16" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+    <path d="M8,24 Q12,20 16,24 T24,24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Glitch Lines (Cuts) -->
+  <rect x="0" y="10" width="32" height="1" fill="#0D1117" opacity="0.8"/>
+  <rect x="4" y="20" width="24" height="1" fill="#0D1117" opacity="0.8"/>
+  <rect x="10" y="5" width="12" height="1" fill="#0D1117" opacity="0.6"/>
+
+</svg>

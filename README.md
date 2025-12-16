@@ -35,86 +35,86 @@ This allows developers and users to use the tool in their preferred environment 
 
 The project continues to evolve, with plans to expand features and platform support:
 
--   **Sprite Editing:** Implementation of advanced tools for graphic editing directly within the application.
--   **Encryption Support:** Ability to handle encrypted asset files from different client versions.
--   **Browser (WebAssembly):** Porting the application to run directly in the browser using Blazor and WebAssembly, eliminating the need for installation.
--   **Mobile (iOS/Android):** Extending support to mobile devices via .NET MAUI, enabling asset editing on smartphones and tablets.
+-   **Edição de Sprites:** Implementação de ferramentas avançadas para edição gráfica diretamente na aplicação.
+-   **Suporte a Criptografia:** Capacidade de lidar com arquivos de assets criptografados de diferentes versões do cliente.
+-   **Browser (WebAssembly):** Porte da aplicação para rodar diretamente no navegador utilizando Blazor e WebAssembly, eliminando a necessidade de instalação.
+-   **Mobile (iOS/Android):** Extensão do suporte para dispositivos móveis através do .NET MAUI, possibilitando a edição de assets em smartphones e tablets.
 
-## Getting Started
+## Começando
 
-To compile and run this project, you need the .NET SDK installed. The project uses submodules to manage external dependencies, so it is crucial to initialize them after cloning the repository.
+Para compilar e executar este projeto, é necessário ter o SDK do .NET instalado. O projeto utiliza submódulos para gerenciar dependências externas, portanto, é crucial inicializá-los após a clonagem do repositório.
 
-### Cloning the Repository
+### Clonando o Repositório
 
-To get the source code, clone the repository using the following command:
+Para obter o código-fonte, clone o repositório usando o seguinte comando:
 
 ```bash
 git clone --recursive https://github.com/Ceetros/baconbinary-objecteditor.git
 cd baconbinary-objecteditor
 ```
 
-If you have already cloned the repository without the `--recursive` flag, you can initialize the submodules with:
+Se você já clonou o repositório sem a flag `--recursive`, pode inicializar os submódulos com o seguinte comando:
 
 ```bash
 git submodule update --init --recursive
 ```
 
-### Building the Project
+### Compilando o Projeto
 
-You can build the project using the .NET CLI. Run the following command in the project root:
+A compilação do projeto pode ser realizada através da interface de linha de comando do .NET. Execute o seguinte comando na raiz do projeto:
 
 ```bash
 dotnet build
 ```
 
-This command will restore NuGet dependencies and build the `BaconBinary.ObjectEditor.sln` solution.
+Este comando irá restaurar as dependências do NuGet e compilar a solução `BaconBinary.ObjectEditor.sln`.
 
-### Running the Project
+## Executando o Projeto
 
-After a successful build, you can start the application. The main UI project is `BaconBinary.ObjectEditor.UI`. To run it, use:
+Após a compilação bem-sucedida, a aplicação pode ser iniciada. O projeto principal da interface do usuário é o `BaconBinary.ObjectEditor.UI`. Para executá-lo, utilize o seguinte comando:
 
 ```bash
 dotnet run --project BaconBinary.ObjectEditor.UI
 ```
 
-## Project Structure
+## Estrutura do Projeto
 
-The solution is organized into the following main projects and directories:
+A solução está organizada nos seguintes projetos e diretórios principais:
 
--   `BaconBinary.ObjectEditor.UI/`: Contains the user interface implementation.
--   `external/`: Directory housing submodules and external project dependencies.
--   `BaconBinary.ObjectEditor.sln`: The main solution file for Visual Studio.
+-   `BaconBinary.ObjectEditor.UI/`: Contém a implementação da interface do usuário da aplicação.
+-   `external/`: Diretório que abriga os submódulos e dependências externas do projeto.
+-   `BaconBinary.ObjectEditor.sln`: O arquivo de solução principal para o Visual Studio.
 
-## Contributing
+## Contribuindo
 
-Contributions to BaconBinary.ObjectEditor are welcome. To contribute, please follow these guidelines:
+Contribuições para o desenvolvimento do BaconBinary.ObjectEditor são bem-vindas. Para contribuir, por favor, siga estas diretrizes:
 
-1.  Fork the repository.
-2.  Create a new branch for your feature (`git checkout -b feature/new-feature`).
-3.  Commit your changes (`git commit -am 'Add new feature'`).
-4.  Push to the branch (`git push origin feature/new-feature`).
-5.  Open a Pull Request.
+1.  Faça um fork do repositório.
+2.  Crie uma nova branch para a sua feature (`git checkout -b feature/nova-feature`).
+3.  Faça o commit de suas alterações (`git commit -am 'Adiciona nova feature'`).
+4.  Faça o push para a branch (`git push origin feature/nova-feature`).
+5.  Abra um Pull Request.
 
-## Supporters & Inspiration
+## Apoiadores e Inspiração
 
-This project would not be possible without the support and inspiration from various community sources:
+Este projeto não seria possível sem o apoio e a inspiração de diversas fontes da comunidade:
 
--   **PokeWorldOnline:** Contributed to the initial idea of creating the tool.
--   **Ninja Chronicles:** Active project supporting and using `BaconBinary.ObjectEditor`.
--   **Object Builder:** The tool that served as the main inspiration for the User Interface (UI).
--   **Ceetros:** Creator and backend developer.
+-   **PokeWorldOnline:** Projeto que contribuiu para a ideia inicial da criação da ferramenta.
+-   **Ninja Chronicles:** Projeto ativo que apoia e utiliza o `BaconBinary.ObjectEditor`.
+-   **Object Builder:** Ferramenta que serviu como principal inspiração para a interface de usuário (UI). 
+-   **Ceetros:** Criador do projeto.
 
-*If you want your nickname/project listed as a supporter, please contact us or submit a Pull Request with a fix or feature.*
+*Caso queira seu nick/projeto como apoiador, entre em contato ou faça um Pull Request com alguma correção e/ou feature.*
 
-## Note on Source Code
+## Nota sobre o Código-Fonte
 
-It is important to note that while the core of `BaconBinary.ObjectEditor` is open-source, certain advanced features, such as encryption support for newer clients, will be kept as closed-source modules.
+É importante notar que, embora o núcleo do `BaconBinary.ObjectEditor` seja open-source, certas funcionalidades avançadas, como o suporte à criptografia de clientes mais recentes, serão mantidas como módulos de código fechado.
 
-However, to foster collaboration and extensibility, we will provide an open-source template that will serve as a base for the community to develop and integrate their own encryption implementations as external modules.
+No entanto, para fomentar a colaboração e a extensibilidade, forneceremos um template open-source que servirá como base para que a comunidade possa desenvolver e integrar suas próprias implementações de criptografia como módulos externos.
 
-## BaconBinary Ecosystem
+## Ecossistema BaconBinary
 
-`BaconBinary.ObjectEditor` is the first in a series of tools that will utilize a shared core for Tibia asset manipulation. The plan is to expand this ecosystem with the following projects:
+O `BaconBinary.ObjectEditor` é a primeira de uma série de ferramentas que utilizarão um core compartilhado para a manipulação de assets do Tibia. O plano é expandir este ecossistema com os seguintes projetos:
 
 -   **BaconBinary.MapEditor:** A complete map editor built on the same technological base.
 -   **BaconBinary.ItemEditor:** A tool dedicated to editing items and their properties.
