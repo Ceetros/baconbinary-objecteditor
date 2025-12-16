@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BaconBinary.ObjectEditor.UI", "BaconBinary.ObjectEditor.UI", "{E92CEDE4-69CD-643B-6101-8149208A0AA4}"
-	ProjectSection(SolutionItems) = preProject
-		BaconBinary.ObjectEditor.UI\readme.md = BaconBinary.ObjectEditor.UI\readme.md
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaconBinary.ObjectEditor.UI", "BaconBinary.ObjectEditor.UI\BaconBinary.ObjectEditor.UI\BaconBinary.ObjectEditor.UI.csproj", "{2C6FF39C-CD89-49F2-9F80-1B4C75C6C03E}"
 EndProject
@@ -15,6 +12,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{A1DEA81B-796C-30DE-FFE6-895D75D26B3C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaconBinary.Core", "external\core\BaconBinary.Core.csproj", "{8A378ADB-DB8E-4857-ACAC-5FD344DC69B9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaconBinary.ObjectEditor.UI.Android", "BaconBinary.ObjectEditor.UI\BaconBinary.ObjectEditor.UI.Android\BaconBinary.ObjectEditor.UI.Android.csproj", "{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,6 +49,18 @@ Global
 		{8A378ADB-DB8E-4857-ACAC-5FD344DC69B9}.Release|x64.Build.0 = Release|Any CPU
 		{8A378ADB-DB8E-4857-ACAC-5FD344DC69B9}.Release|x86.ActiveCfg = Release|Any CPU
 		{8A378ADB-DB8E-4857-ACAC-5FD344DC69B9}.Release|x86.Build.0 = Release|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Debug|x64.Build.0 = Debug|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Debug|x86.Build.0 = Debug|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Release|Any CPU.Build.0 = Release|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Release|x64.ActiveCfg = Release|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Release|x64.Build.0 = Release|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Release|x86.ActiveCfg = Release|Any CPU
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -58,5 +69,6 @@ Global
 		{2C6FF39C-CD89-49F2-9F80-1B4C75C6C03E} = {E92CEDE4-69CD-643B-6101-8149208A0AA4}
 		{A1DEA81B-796C-30DE-FFE6-895D75D26B3C} = {A288BEE0-695A-BEEA-455C-649571D89326}
 		{8A378ADB-DB8E-4857-ACAC-5FD344DC69B9} = {A1DEA81B-796C-30DE-FFE6-895D75D26B3C}
+		{952BCA8D-76D8-4D7C-9B41-B7565E7F6913} = {E92CEDE4-69CD-643B-6101-8149208A0AA4}
 	EndGlobalSection
 EndGlobal

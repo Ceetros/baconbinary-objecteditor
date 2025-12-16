@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging; 
@@ -131,6 +133,39 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 IsTransparency = ClientFeatures.Transparency;
 
                 await LoadDataInternal(datPath, sprPath, VersionString);
+            }
+        }
+
+        [RelayCommand]
+        private void OpenAbout()
+        {
+            var aboutWindow = new AboutWindow();
+            aboutWindow.Show();
+        }
+
+        [RelayCommand]
+        private void Donate()
+        {
+            var url = "https://www.paypal.com/donate/?hosted_button_id=5Q8YX497C9QWU";
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    url = url.Replace("&", "^&");
+                    Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    Process.Start("xdg-open", url);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Process.Start("open", url);
+                }
             }
         }
 

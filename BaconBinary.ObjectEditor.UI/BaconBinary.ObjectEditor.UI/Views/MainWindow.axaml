@@ -63,8 +63,8 @@
                     </MenuItem>
                     
                     <MenuItem Header="Help">
-                        <MenuItem Header="About"/>
-                        <MenuItem Header="Donate"/>
+                        <MenuItem Header="About" Command="{Binding OpenAboutCommand}"/>
+                        <MenuItem Header="Donate" Command="{Binding DonateCommand}"/>
                     </MenuItem>
                 </Menu>
 
