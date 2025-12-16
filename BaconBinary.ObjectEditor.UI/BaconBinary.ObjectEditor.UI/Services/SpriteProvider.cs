@@ -20,7 +20,30 @@ namespace BaconBinary.ObjectEditor.UI.Services
             _sprReader = new SprReader();
         }
 
+        public WriteableBitmap GetSpriteBitmap(uint spriteId)
+        {
+            if (spriteId == 0) return null;
+
+            var bitmap = new WriteableBitmap(new PixelSize(32, 32), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
+            
+            using (var buffer = bitmap.Lock())
+            {
+                ClearBuffer(buffer, 32);
+                byte[] compressedPixels = _sprReader.ExtractPixels(_sprFile, (int)spriteId);
+                if (compressedPixels != null && compressedPixels.Length > 0)
+                {
+                    DrawSpriteLegacy(compressedPixels, buffer, 0, 0);
+                }
+            }
+            return bitmap;
+        }
+
         public WriteableBitmap GetThingBitmap(ThingType thing, FrameGroupType groupType = FrameGroupType.Default, int frameIndex = 0)
+        {
+            return GetThingBitmapWithPattern(thing, groupType, frameIndex, 0, 0, 0);
+        }
+
+        public WriteableBitmap GetThingBitmapWithPattern(ThingType thing, FrameGroupType groupType, int frameIndex, int patternX, int patternY, int patternZ)
         {
             if (thing == null || !thing.FrameGroups.ContainsKey(groupType))
                 return null;
@@ -46,7 +69,7 @@ namespace BaconBinary.ObjectEditor.UI.Services
                         int indexW = group.Width - 1 - w;
                         int indexH = group.Height - 1 - h;
 
-                        uint spriteId = group.GetSpriteId(frameIndex, 0, 0, 0, 0, indexW, indexH);
+                        uint spriteId = group.GetSpriteId(frameIndex, patternX, patternY, patternZ, 0, indexW, indexH);
 
                         if (spriteId > 0)
                         {
@@ -133,7 +156,7 @@ namespace BaconBinary.ObjectEditor.UI.Services
             pixelPtr[0] = b; 
             pixelPtr[1] = g; 
             pixelPtr[2] = r; 
-            pixelPtr[3] = a; 
+            pixelPtr[3] = a;
         }
     }
 }

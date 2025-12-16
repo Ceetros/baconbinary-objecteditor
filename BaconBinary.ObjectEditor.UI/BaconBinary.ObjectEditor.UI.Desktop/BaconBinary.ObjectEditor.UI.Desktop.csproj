@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\external\core\BaconBinary.Core.csproj" />
     <ProjectReference Include="..\BaconBinary.ObjectEditor.UI\BaconBinary.ObjectEditor.UI.csproj" />
   </ItemGroup>
 </Project>
