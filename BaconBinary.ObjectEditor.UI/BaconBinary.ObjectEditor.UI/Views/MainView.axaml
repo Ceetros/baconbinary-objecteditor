@@ -1,0 +1,376 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:BaconBinary.ObjectEditor.UI.ViewModels"
+             xmlns:cv="using:BaconBinary.ObjectEditor.UI.Converters"
+             xmlns:models="using:BaconBinary.Core.Models"
+             xmlns:views="using:BaconBinary.ObjectEditor.UI.Views"
+             xmlns:sys="using:System"
+             x:Class="BaconBinary.ObjectEditor.UI.Views.MainView"
+             x:Name="RootView"
+             x:DataType="vm:MainViewModel"
+             DragDrop.AllowDrop="True"
+             DragDrop.DragOver="OnDragOver"
+             DragDrop.Drop="OnDrop">
+    
+    <UserControl.Resources>
+        <cv:ThingToBitmapConverter x:Key="ThingToBitmapConverter"/>
+        <cv:SpriteIdToBitmapConverter x:Key="SpriteIdToBitmapConverter"/>
+        <cv:CategoryToVisibilityConverter x:Key="CategoryToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- Editor View (shown when IsEditing is True) -->
+        <views:EditorView DataContext="{Binding}" IsVisible="{Binding IsEditing}"/>
+
+        <!-- Main Browser View (shown when IsEditing is False) -->
+        <Grid RowDefinitions="Auto, *" IsVisible="{Binding !IsEditing}">
+            
+            <!-- Top Toolbar -->
+            <Border Grid.Row="0" Background="{DynamicResource HeaderBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="0">
+                <Grid ColumnDefinitions="Auto, *, Auto">
+                    
+                    <!-- Main Menu -->
+                    <Menu Grid.Column="0" Background="Transparent">
+                        <MenuItem Header="BaconEditor" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}">
+                            <MenuItem.Icon>
+                                <Image Source="{DynamicResource BaconIcon}" Width="20" Height="20" />
+                            </MenuItem.Icon>
+                            
+                            <MenuItem Header="Open Project" Command="{Binding OpenFilesCommand}" CommandParameter="{Binding #RootView}" InputGesture="Ctrl+O">
+                                <MenuItem.Icon>
+                                    <PathIcon Data="{StaticResource FolderOpenRegular}" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            
+                            <Separator/>
+                            
+                            <MenuItem Header="Compile" Command="{Binding CompileProjectCommand}" InputGesture="Ctrl+S">
+                                <MenuItem.Icon>
+                                    <PathIcon Data="{StaticResource SaveRegular}" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            
+                            <MenuItem Header="Compile As..." Command="{Binding CompileProjectAsCommand}" CommandParameter="{Binding #RootView}" InputGesture="Ctrl+Shift+S">
+                                <MenuItem.Icon>
+                                    <PathIcon Data="{StaticResource SaveAsRegular}" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            
+                            <Separator/>
+                            
+                            <MenuItem Header="Exit" InputGesture="Alt+F4"/>
+                        </MenuItem>
+                        
+                        <MenuItem Header="Create">
+                            <MenuItem Header="New Object..." Command="{Binding OpenImportWindowCommand}"/>
+                            <MenuItem Header="Import Sprites..." Command="{Binding ImportSpritesCommand}"/>
+                            <MenuItem Header="New Item"/>
+                            <MenuItem Header="New Outfit"/>
+                        </MenuItem>
+                        
+                        <MenuItem Header="Help">
+                            <MenuItem Header="About" Command="{Binding OpenAboutCommand}"/>
+                            <MenuItem Header="Donate" Command="{Binding DonateCommand}"/>
+                        </MenuItem>
+                    </Menu>
+
+                    <!-- Version Badge -->
+                    <Border Grid.Column="2" Background="{DynamicResource AccentBrush}" CornerRadius="4" Padding="8,2" Margin="0,0,12,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding VersionString}" Foreground="#0D1117" FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Main Content Area -->
+            <Grid Grid.Row="1" ColumnDefinitions="300, 4, *, 4, 340">
+
+                <!-- LEFT COLUMN: Inspector (Preview & Properties) -->
+                <Grid Grid.Column="0" RowDefinitions="Auto, *" Margin="0,0,0,0" Background="{DynamicResource PanelBackgroundBrush}">
+                    
+                    <!-- Preview Panel -->
+                    <Border Grid.Row="0" Margin="8" Padding="0" Background="{DynamicResource AppBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                        <Grid RowDefinitions="Auto, Auto">
+                            <Border Grid.Row="0" Height="160" CornerRadius="8,8,0,0" ClipToBounds="True" Background="{DynamicResource CheckerboardBrush}">
+                                <Image Source="{Binding SelectedItem, Converter={StaticResource ThingToBitmapConverter}}" 
+                                       Stretch="None" 
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"/>
+                            </Border>
+                            
+                            <Border Grid.Row="1" Background="{DynamicResource HeaderBackgroundBrush}" CornerRadius="0,0,8,8" Padding="10,6">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Text="{Binding SelectedItem.Id, StringFormat='ID: {0}'}" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Grid.Column="1" Text="Item" Foreground="{DynamicResource AccentBrush}" FontSize="11" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Properties Panel (Read-Only) -->
+                    <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+                        <ScrollViewer Padding="12" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="16" IsEnabled="False"> <!-- Disabled for Read-Only -->
+                                
+                                <!-- Global Properties -->
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Global" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                    <CheckBox Content="Always Animate" IsChecked="{Binding SelectedItem.AnimateAlways, FallbackValue=False}"/>
+                                </StackPanel>
+                                
+                                <Separator Background="{DynamicResource BorderBrush}" Height="1"/>
+                                
+                                <!-- Item-Specific Properties -->
+                                <StackPanel Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
+                                    <TextBlock Text="General" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                    <UniformGrid Columns="2">
+                                        <CheckBox Content="Ground" IsChecked="{Binding SelectedItem.IsGround, FallbackValue=False}" Margin="0,0,5,0"/>
+                                        <CheckBox Content="Container" IsChecked="{Binding SelectedItem.IsContainer, FallbackValue=False}"/>
+                                        <CheckBox Content="Stackable" IsChecked="{Binding SelectedItem.IsStackable, FallbackValue=False}" Margin="0,0,5,0"/>
+                                        <CheckBox Content="Force Use" IsChecked="{Binding SelectedItem.ForceUse, FallbackValue=False}"/>
+                                        <CheckBox Content="Multi-Use" IsChecked="{Binding SelectedItem.IsMultiUse, FallbackValue=False}" Margin="0,0,5,0"/>
+                                        <CheckBox Content="Writable" IsChecked="{Binding SelectedItem.IsWritable, FallbackValue=False}"/>
+                                        <CheckBox Content="Readable" IsChecked="{Binding SelectedItem.IsReadable, FallbackValue=False}" Margin="0,0,5,0"/>
+                                        <CheckBox Content="Fluid Container" IsChecked="{Binding SelectedItem.IsFluid, FallbackValue=False}"/>
+                                        <CheckBox Content="Splash" IsChecked="{Binding SelectedItem.IsSplash, FallbackValue=False}" Margin="0,0,5,0"/>
+                                    </UniformGrid>
+                                </StackPanel>
+                                
+                                <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}" Background="{DynamicResource BorderBrush}" Height="1"/>
+                                
+                                <StackPanel Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
+                                    <TextBlock Text="Movement &amp; Collision" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                    <UniformGrid Columns="2">
+                                        <CheckBox Content="Block Solid" IsChecked="{Binding SelectedItem.IsUnpassable, FallbackValue=False}" Margin="0,0,5,0"/>
+                                        <CheckBox Content="Block Projectile" IsChecked="{Binding SelectedItem.BlockMissile, FallbackValue=False}"/>
+                                        <CheckBox Content="Block Pathfind" IsChecked="{Binding SelectedItem.BlockPathfind, FallbackValue=False}" Margin="0,0,5,0"/>
+                                        <CheckBox Content="Walk Stack" IsChecked="{Binding SelectedItem.WalkStack, FallbackValue=False}"/>
+                                    </UniformGrid>
+                                </StackPanel>
+
+                                <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}" Background="{DynamicResource BorderBrush}" Height="1"/>
+
+                                <StackPanel Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
+                                    <TextBlock Text="Visual" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                    <UniformGrid Columns="2">
+                                        <CheckBox Content="Lying Object" IsChecked="{Binding SelectedItem.IsLyingObject, FallbackValue=False}"/>
+                                        <CheckBox Content="Top Effect" IsChecked="{Binding SelectedItem.IsTopEffect, FallbackValue=False}" Margin="0,0,5,0"/>
+                                        <CheckBox Content="Translucent" IsChecked="{Binding SelectedItem.IsTranslucent, FallbackValue=False}"/>
+                                        <CheckBox Content="Rotatable" IsChecked="{Binding SelectedItem.IsRotatable, FallbackValue=False}" Margin="0,0,5,0"/>
+                                        <CheckBox Content="Hangable" IsChecked="{Binding SelectedItem.IsHangable, FallbackValue=False}"/>
+                                        <CheckBox Content="Hook South" IsChecked="{Binding SelectedItem.IsHookSouth, FallbackValue=False}" Margin="0,0,5,0"/>
+                                        <CheckBox Content="Hook East" IsChecked="{Binding SelectedItem.IsHookEast, FallbackValue=False}"/>
+                                    </UniformGrid>
+                                </StackPanel>
+                                
+                                <Separator Background="{DynamicResource BorderBrush}" Height="1"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Displacement" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                    <CheckBox Content="Has Offset" IsChecked="{Binding SelectedItem.HasOffset, FallbackValue=False}"/>
+                                    <Grid ColumnDefinitions="*, 10, *">
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Offset X" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            <NumericUpDown Value="{Binding SelectedItem.OffsetX, FallbackValue=0}" IsEnabled="{Binding SelectedItem.HasOffset, FallbackValue=False}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Offset Y" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            <NumericUpDown Value="{Binding SelectedItem.OffsetY, FallbackValue=0}" IsEnabled="{Binding SelectedItem.HasOffset, FallbackValue=False}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+
+                                <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}" Background="{DynamicResource BorderBrush}" Height="1"/>
+
+                                <StackPanel Spacing="8" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
+                                    <TextBlock Text="Market" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                    <CheckBox Content="Is Market Item" IsChecked="{Binding SelectedItem.IsMarketItem, FallbackValue=False}"/>
+                                    <TextBox Text="{Binding SelectedItem.MarketName, FallbackValue=''}" Watermark="Market Name" IsEnabled="{Binding SelectedItem.IsMarketItem, FallbackValue=False}"/>
+                                    <UniformGrid Columns="2">
+                                        <StackPanel Margin="0,0,5,0">
+                                            <TextBlock Text="Category" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            <NumericUpDown Value="{Binding SelectedItem.MarketCategory, FallbackValue=0}" IsEnabled="{Binding SelectedItem.IsMarketItem, FallbackValue=False}"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Trade As" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            <NumericUpDown Value="{Binding SelectedItem.MarketTradeAs, FallbackValue=0}" IsEnabled="{Binding SelectedItem.IsMarketItem, FallbackValue=False}"/>
+                                        </StackPanel>
+                                        <StackPanel Margin="0,0,5,0">
+                                            <TextBlock Text="Show As" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            <NumericUpDown Value="{Binding SelectedItem.MarketShowAs, FallbackValue=0}" IsEnabled="{Binding SelectedItem.IsMarketItem, FallbackValue=False}"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Restrict Level" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            <NumericUpDown Value="{Binding SelectedItem.MarketRestrictLevel, FallbackValue=0}" IsEnabled="{Binding SelectedItem.IsMarketItem, FallbackValue=False}"/>
+                                        </StackPanel>
+                                    </UniformGrid>
+                                    <StackPanel>
+                                        <TextBlock Text="Restrict Profession" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <NumericUpDown Value="{Binding SelectedItem.MarketRestrictProfession, FallbackValue=0}" IsEnabled="{Binding SelectedItem.IsMarketItem, FallbackValue=False}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+
+                <GridSplitter Grid.Column="1" Background="{DynamicResource BorderBrush}" ResizeBehavior="PreviousAndNext"/>
+
+                <!-- CENTER COLUMN: Browser -->
+                <Grid Grid.Column="2" RowDefinitions="Auto, *, Auto">
+                    
+                    <!-- Search & Filter Bar -->
+                    <Border Grid.Row="0" Background="{DynamicResource PanelBackgroundBrush}" Padding="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+                        <Grid ColumnDefinitions="Auto, *, Auto">
+                            <ComboBox Grid.Column="0" SelectedIndex="{Binding SelectedCategoryIndex}" Margin="0,0,8,0" Width="120">
+                                <ComboBoxItem>Items</ComboBoxItem>
+                                <ComboBoxItem>Outfits</ComboBoxItem>
+                                <ComboBoxItem>Effects</ComboBoxItem>
+                                <ComboBoxItem>Missiles</ComboBoxItem>
+                            </ComboBox>
+                            
+                            <TextBox Grid.Column="1" Watermark="Search by ID or Name..." CornerRadius="4" Classes="SearchBox"/>
+                            
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" Margin="8,0,0,0">
+                                <Button Content="Filter" Classes="AccentButton"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Items Grid -->
+                    <ListBox Grid.Row="1" 
+                             ItemsSource="{Binding MainViewItems}" 
+                             SelectedItem="{Binding SelectedItem}"
+                             DoubleTapped="EditItem_OnDoubleTapped"
+                             Background="{DynamicResource AppBackgroundBrush}"
+                             BorderThickness="0"
+                             Padding="8"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel ItemWidth="40" ItemHeight="40" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:ThingType">
+                                <Border Background="{DynamicResource PanelBackgroundBrush}" 
+                                        BorderBrush="{DynamicResource BorderBrush}" 
+                                        BorderThickness="1" 
+                                        CornerRadius="4"
+                                        ToolTip.Tip="{Binding Id, StringFormat='ID: {0}'}">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Edit Item" Command="{Binding $parent[ListBox].DataContext.EditItemCommand}"/>
+                                            <MenuItem Header="Copy ID"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+                                    <Image Source="{Binding ., Converter={StaticResource ThingToBitmapConverter}}" 
+                                           Stretch="None" 
+                                           HorizontalAlignment="Center" 
+                                           VerticalAlignment="Center"/>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    
+                    <!-- Pagination -->
+                    <Border Grid.Row="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="8">
+                        <StackPanel Spacing="5">
+                            <Grid ColumnDefinitions="Auto, Auto, *, Auto, Auto">
+                                <Button Grid.Column="0" Content="&lt;&lt;" Command="{Binding ChangeMainViewPageCommand}" CommandParameter="first"/>
+                                <Button Grid.Column="1" Content="&lt;" Command="{Binding ChangeMainViewPageCommand}" CommandParameter="prev"/>
+                                <TextBlock Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}">
+                                    <Run Text="{Binding MainViewCurrentPage}"/>/<Run Text="{Binding MainViewTotalPages}"/>
+                                </TextBlock>
+                                <Button Grid.Column="3" Content="&gt;" Command="{Binding ChangeMainViewPageCommand}" CommandParameter="next"/>
+                                <Button Grid.Column="4" Content="&gt;&gt;" Command="{Binding ChangeMainViewPageCommand}" CommandParameter="last"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="Auto, *">
+                                <TextBlock Text="Per Page:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <ComboBox ItemsSource="{Binding MainViewItemsPerPageOptions}" SelectedItem="{Binding MainViewItemsPerPage}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Loading Overlay -->
+                    <Grid Grid.Row="1" Grid.RowSpan="2" Background="#AA0D1117" IsVisible="{Binding IsLoading, FallbackValue=False}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                            <ProgressBar IsIndeterminate="True" Width="100" Foreground="{DynamicResource AccentBrush}"/>
+                            <TextBlock Text="Loading Assets..." Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+
+                <GridSplitter Grid.Column="3" Background="{DynamicResource BorderBrush}" ResizeBehavior="PreviousAndNext"/>
+
+                <!-- RIGHT COLUMN: Sprites & Details -->
+                <Grid Grid.Column="4" RowDefinitions="*, Auto" Background="{DynamicResource PanelBackgroundBrush}">
+                    
+                    <Grid Grid.Row="0" RowDefinitions="Auto, Auto, *">
+                        <Border Grid.Row="0" Background="{DynamicResource HeaderBackgroundBrush}" Padding="8">
+                            <TextBlock Text="SPRITE PALETTE" FontWeight="Bold" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"/>
+                        </Border>
+                        
+                        <TextBox Grid.Row="1" Watermark="Search Sprite ID..." Margin="5"/>
+                        
+                        <ScrollViewer Grid.Row="2">
+                            <ItemsControl ItemsSource="{Binding SpriteIds}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel ItemWidth="36" ItemHeight="36"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="sys:UInt32">
+                                        <Border Background="{DynamicResource CheckerboardBrush}" Margin="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="2">
+                                            <Image Source="{Binding ., Converter={StaticResource SpriteIdToBitmapConverter}}" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- Statistics Footer -->
+                    <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="8">
+                        <StackPanel Spacing="5">
+                            <Grid ColumnDefinitions="Auto, Auto, *, Auto, Auto">
+                                <Button Grid.Column="0" Content="&lt;&lt;" Command="{Binding ChangeSpritePageCommand}" CommandParameter="first"/>
+                                <Button Grid.Column="1" Content="&lt;" Command="{Binding ChangeSpritePageCommand}" CommandParameter="prev"/>
+                                <TextBlock Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}">
+                                    <Run Text="{Binding CurrentSpritePage}"/>/<Run Text="{Binding TotalSpritePages}"/>
+                                </TextBlock>
+                                <Button Grid.Column="3" Content="&gt;" Command="{Binding ChangeSpritePageCommand}" CommandParameter="next"/>
+                                <Button Grid.Column="4" Content="&gt;&gt;" Command="{Binding ChangeSpritePageCommand}" CommandParameter="last"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="Auto, *">
+                                <TextBlock Text="Per Page:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <ComboBox ItemsSource="{Binding SpritesPerPageOptions}" SelectedItem="{Binding SpritesPerPage}"/>
+                            </Grid>
+                            
+                            <Separator Background="{DynamicResource BorderBrush}" Height="1" Margin="0,5"/>
+                            
+                            <TextBlock Text="STATISTICS" FontWeight="Bold" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,0,0,4"/>
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Text="Total Items" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding ItemCount}" FontWeight="Bold"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Text="Total Sprites" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding SpriteCount}" FontWeight="Bold"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+            </Grid>
+            
+            <!-- Status Bar -->
+            <Border Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" 
+                    Background="{DynamicResource AccentBrush}" Height="4"
+                    IsVisible="{Binding IsLoading}"/>
+        </Grid>
+    </Grid>
+</UserControl>

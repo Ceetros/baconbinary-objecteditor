@@ -13,4 +13,8 @@
   <ItemGroup>
     <ProjectReference Include="..\BaconBinary.ObjectEditor.UI\BaconBinary.ObjectEditor.UI.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="wwwroot\favicon.ico" />
+  </ItemGroup>
 </Project>

@@ -7,7 +7,7 @@ namespace BaconBinary.ObjectEditor.UI.Android;
 
 [Activity(
     Label = "BaconBinary.ObjectEditor.UI.Android",
-    Theme = "@style/MyTheme.NoActionBar",
+    Theme = "@style/MyTheme.Splash",
     Icon = "@drawable/icon",
     MainLauncher = true,
     ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.UiMode)]

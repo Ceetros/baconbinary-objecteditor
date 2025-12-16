@@ -20,6 +20,10 @@
         <SolidColorBrush x:Key="TextSecondaryBrush">#8B949E</SolidColorBrush>
         <SolidColorBrush x:Key="ListItemSelectedBackgroundBrush">#1F6FEB</SolidColorBrush>
         
+        <!-- Menu Specific Brushes -->
+        <SolidColorBrush x:Key="MenuHoverBrush">#30363D</SolidColorBrush>
+        <SolidColorBrush x:Key="MenuSelectedBrush">#1F6FEB</SolidColorBrush>
+        
         <!-- Bacon Glitch Icon Resource -->
         <DrawingImage x:Key="BaconIcon">
             <DrawingImage.Drawing>
@@ -83,6 +87,76 @@
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="Margin" Value="0,4"/>
+        </Style>
+
+        <!-- Menu Styles -->
+        <Style Selector="Menu">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="MenuItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        
+        <!-- Hover State -->
+        <Style Selector="MenuItem:pointerover /template/ ContentPresenter#PART_HeaderPresenter">
+            <Setter Property="Background" Value="{DynamicResource MenuHoverBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        
+        <!-- Selected/Open State -->
+        <Style Selector="MenuItem:selected /template/ ContentPresenter#PART_HeaderPresenter">
+            <Setter Property="Background" Value="{DynamicResource MenuSelectedBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        
+        <!-- Pressed State (to avoid default blue) -->
+        <Style Selector="MenuItem:pressed /template/ ContentPresenter#PART_HeaderPresenter">
+            <Setter Property="Background" Value="{DynamicResource MenuSelectedBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- Submenu Item Hover (Specific fix for items inside the dropdown) -->
+        <Style Selector="MenuItem > MenuItem:pointerover /template/ ContentPresenter#PART_HeaderPresenter">
+             <Setter Property="Background" Value="{DynamicResource MenuHoverBrush}"/>
+             <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style Selector="Menu > MenuItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
+        </Style>
+        
+        <Style Selector="ContextMenu">
+            <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+        
+        <!-- ComboBox Styles -->
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+        <Style Selector="ComboBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+        <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource MenuHoverBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ComboBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource MenuSelectedBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style Selector="Separator">
+            <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Margin" Value="4"/>
         </Style>
 
     </Application.Styles>
