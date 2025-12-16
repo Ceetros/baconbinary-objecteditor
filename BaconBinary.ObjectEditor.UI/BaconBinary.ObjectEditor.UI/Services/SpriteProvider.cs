@@ -12,27 +12,30 @@ namespace BaconBinary.ObjectEditor.UI.Services
     public class SpriteProvider
     {
         private readonly SprFile _sprFile;
-        private readonly SprReader _sprReader;
 
         public SpriteProvider(SprFile sprFile)
         {
             _sprFile = sprFile;
-            _sprReader = new SprReader();
         }
 
         public WriteableBitmap GetSpriteBitmap(uint spriteId)
         {
-            if (spriteId == 0) return null;
-
-            var bitmap = new WriteableBitmap(new PixelSize(32, 32), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
+            if (spriteId == 0 || !_sprFile.Sprites.TryGetValue(spriteId, out var sprite)) 
+                return null;
+            
+            var bitmap = new WriteableBitmap(new PixelSize(32, 32), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Unpremul);
             
             using (var buffer = bitmap.Lock())
             {
-                ClearBuffer(buffer, 32);
-                byte[] compressedPixels = _sprReader.ExtractPixels(_sprFile, (int)spriteId);
-                if (compressedPixels != null && compressedPixels.Length > 0)
+                byte[] decompressedPixels = sprite.GetPixels();
+                
+                unsafe
                 {
-                    DrawSpriteLegacy(compressedPixels, buffer, 0, 0);
+                    fixed (byte* p = decompressedPixels)
+                    {
+                        long bufferSize = buffer.Size.Height * buffer.RowBytes;
+                        Buffer.MemoryCopy(p, (void*)buffer.Address, bufferSize, decompressedPixels.Length);
+                    }
                 }
             }
             return bitmap;
@@ -56,11 +59,12 @@ namespace BaconBinary.ObjectEditor.UI.Services
             if (thing.FrameIndex != null)
                 frameIndex = thing.FrameIndex.Value;
 
-            var bitmap = new WriteableBitmap(new PixelSize(totalWidth, totalHeight), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
+            var bitmap = new WriteableBitmap(new PixelSize(totalWidth, totalHeight), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Unpremul);
 
             using (var buffer = bitmap.Lock())
             {
-                ClearBuffer(buffer, totalHeight);
+                long bufferSize = buffer.Size.Height * buffer.RowBytes;
+                unsafe { new Span<byte>((void*)buffer.Address, (int)bufferSize).Clear(); }
 
                 for (int h = 0; h < group.Height; h++)
                 {
@@ -71,14 +75,10 @@ namespace BaconBinary.ObjectEditor.UI.Services
 
                         uint spriteId = group.GetSpriteId(frameIndex, patternX, patternY, patternZ, 0, indexW, indexH);
 
-                        if (spriteId > 0)
+                        if (spriteId > 0 && _sprFile.Sprites.TryGetValue(spriteId, out var sprite))
                         {
-                            byte[] compressedPixels = _sprReader.ExtractPixels(_sprFile, (int)spriteId);
-                            
-                            if (compressedPixels != null && compressedPixels.Length > 0)
-                            {
-                                DrawSpriteLegacy(compressedPixels, buffer, w * 32, h * 32);
-                            }
+                            byte[] decompressedPixels = sprite.GetPixels();
+                            DrawSprite(decompressedPixels, buffer, w * 32, h * 32);
                         }
                     }
                 }
@@ -86,77 +86,20 @@ namespace BaconBinary.ObjectEditor.UI.Services
             return bitmap;
         }
 
-        private unsafe void ClearBuffer(ILockedFramebuffer buffer, int height)
+        private unsafe void DrawSprite(byte[] source, ILockedFramebuffer dest, int startX, int startY)
         {
-            byte* ptr = (byte*)buffer.Address;
-            long totalBytes = buffer.RowBytes * height;
-            new Span<byte>(ptr, (int)totalBytes).Clear();
-        }
+            byte* destPtr = (byte*)dest.Address;
+            int destStride = dest.RowBytes;
 
-        private unsafe void DrawSpriteLegacy(byte[] data, ILockedFramebuffer buffer, int startX, int startY)
-        {
-            int pos = 0; 
-            
-            if (data.Length > 5 && data[0] == 0xFF && data[1] == 0x00 && data[2] == 0xFF)
+            fixed (byte* sourcePtr = source)
             {
-                ushort sizeCheck = BitConverter.ToUInt16(data, 3);
-                if (sizeCheck == data.Length - 5)
+                for (int y = 0; y < 32; y++)
                 {
-                    pos = 5; 
+                    void* destRow = destPtr + ((startY + y) * destStride) + (startX * 4);
+                    void* sourceRow = sourcePtr + (y * 32 * 4);
+                    Buffer.MemoryCopy(sourceRow, destRow, 32 * 4, 32 * 4);
                 }
             }
-
-            bool useAlpha = ClientFeatures.Transparency; 
-            int bitPerPixel = useAlpha ? 4 : 3; 
-
-            int writeIndex = 0; 
-            int length = data.Length;
-
-            byte* destBase = (byte*)buffer.Address;
-            int destStride = buffer.RowBytes;
-
-            while (pos < length)
-            {
-                if (pos + 4 > length) break;
-
-                ushort transparentPixels = BitConverter.ToUInt16(data, pos);
-                pos += 2;
-                ushort coloredPixels = BitConverter.ToUInt16(data, pos);
-                pos += 2;
-
-                writeIndex += transparentPixels;
-
-                for (int i = 0; i < coloredPixels; i++)
-                {
-                    if (pos + 3 > length) break; 
-
-                    byte red = data[pos++];
-                    byte green = data[pos++];
-                    byte blue = data[pos++];
-                    byte alpha = useAlpha ? data[pos++] : (byte)0xFF;
-
-                    WritePixel(destBase, destStride, startX, startY, writeIndex, blue, green, red, alpha);
-                    writeIndex++;
-                }
-            }
-        }
-
-        private unsafe void WritePixel(byte* basePtr, int stride, int startX, int startY, int linearIndex, byte b, byte g, byte r, byte a)
-        {
-            if (linearIndex >= 1024) return;
-
-            int localX = linearIndex % 32;
-            int localY = linearIndex / 32;
-
-            int globalX = startX + localX;
-            int globalY = startY + localY;
-
-            byte* pixelPtr = basePtr + (globalY * stride) + (globalX * 4);
-
-            pixelPtr[0] = b; 
-            pixelPtr[1] = g; 
-            pixelPtr[2] = r; 
-            pixelPtr[3] = a;
         }
     }
 }

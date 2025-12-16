@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -14,9 +15,12 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using BaconBinary.Core;
+using BaconBinary.Core.Configurations;
 using BaconBinary.Core.Enum; 
 using BaconBinary.Core.IO.Dat;
 using BaconBinary.Core.IO.Spr;
+using BaconBinary.Core.IO.Meta;
+using BaconBinary.Core.IO.Asset;
 using BaconBinary.Core.Models;
 using BaconBinary.ObjectEditor.UI.Converters;
 using BaconBinary.ObjectEditor.UI.Services;
@@ -28,24 +32,32 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
     {
         private readonly DatReader _datReader = new();
         private readonly SprReader _sprReader = new();
+        private readonly MetaReader _metaReader = new();
+        private readonly DatWriter _datWriter = new();
+        private readonly SprWriter _sprWriter = new();
+        private readonly MetaWriter _metaWriter = new();
+        private readonly AssetWriter _assetWriter = new();
         
         private readonly DispatcherTimer _animationTimer;
         
         // Editor State
         [ObservableProperty] private int _currentFrameIndex = 0;
-        [ObservableProperty] private int _currentDirection = 2;
+        [ObservableProperty] private int _currentDirection = 2; // Pattern X
+        [ObservableProperty] private int _currentPatternY = 0;
+        [ObservableProperty] private int _currentPatternZ = 0;
         [ObservableProperty] private bool _isPlaying;
         [ObservableProperty] private FrameGroupType _selectedFrameGroup = FrameGroupType.Default;
         public ObservableCollection<SpriteSlotViewModel> ComposerSlots { get; } = new();
         [ObservableProperty] private int _composerWidth = 32;
         [ObservableProperty] private bool _isDirty = false;
+        [ObservableProperty] private ThingType _tempProps;
 
         [ObservableProperty] private string _versionString = "8.60";
         [ObservableProperty] private int _itemCount;
         [ObservableProperty] private int _outfitCount;
         [ObservableProperty] private int _effectCount;
         [ObservableProperty] private int _missileCount;
-        [ObservableProperty] private int _spriteCount;
+        [ObservableProperty] private uint _spriteCount;
 
         [ObservableProperty] private bool _isExtended;
         [ObservableProperty] private bool _isTransparency;
@@ -69,6 +81,9 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         
         [ObservableProperty] private int _selectedCategoryIndex = 0;
         private DatFile _loadedDatFile; 
+        private SprFile _loadedSprFile;
+        private string _currentDatPath;
+        private string _currentSprPath;
 
         [ObservableProperty] private string _statusText = "Ready.";
 
@@ -85,7 +100,6 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         {
             if (IsEditing && IsDirty)
             {
-                // TODO: Implement a proper dialog service
                 Console.WriteLine("Show 'Save Changes?' dialog here.");
             }
             IsDirty = false;
@@ -95,8 +109,19 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         {
             CurrentFrameIndex = 0;
             CurrentDirection = 2;
+            CurrentPatternY = 0;
+            CurrentPatternZ = 0;
             IsPlaying = false;
             _animationTimer.Stop();
+            
+            if (value != null)
+            {
+                TempProps = value.Clone();
+            }
+            else
+            {
+                TempProps = null;
+            }
             
             UpdateComposerSlots();
             
@@ -111,6 +136,8 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         }
 
         partial void OnCurrentDirectionChanged(int value) => UpdateComposerSlots();
+        partial void OnCurrentPatternYChanged(int value) => UpdateComposerSlots();
+        partial void OnCurrentPatternZChanged(int value) => UpdateComposerSlots();
         partial void OnCurrentFrameIndexChanged(int value) => UpdateComposerSlots();
         partial void OnSelectedFrameGroupChanged(FrameGroupType value) => UpdateComposerSlots();
 
@@ -132,7 +159,6 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             }
             
             CurrentFrameIndex = nextFrame;
-            SelectedItem.FrameIndex = nextFrame;
         }
 
         private void UpdateComposerSlots()
@@ -141,24 +167,93 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             if (SelectedItem == null || !SelectedItem.FrameGroups.ContainsKey(SelectedFrameGroup)) return;
 
             var group = SelectedItem.FrameGroups[SelectedFrameGroup];
-            ComposerWidth = group.Width * 32;
+            
+            bool isItem = SelectedItem.Category == ThingCategory.Item;
 
-            // Iterate visually: Top-Left to Bottom-Right
-            for (int y = 0; y < group.Height; y++)
+            if (isItem)
             {
+                ComposerWidth = group.PatternX * group.Width * 32;
+                for (int py = 0; py < group.PatternY; py++)
+                for (int px = 0; px < group.PatternX; px++)
+                for (int y = 0; y < group.Height; y++)
                 for (int x = 0; x < group.Width; x++)
                 {
-                    // Map visual position (x, y) to data index (inverted)
-                    // This matches the logic in SpriteProvider.GetThingBitmap
-                    int dataX = group.Width - 1 - x;
-                    int dataY = group.Height - 1 - y;
-
-                    uint spriteId = group.GetSpriteId(CurrentFrameIndex, CurrentDirection, 0, 0, 0, dataX, dataY);
+                    uint spriteId = group.GetSpriteId(CurrentFrameIndex, px, py, CurrentPatternZ, 0, x, y);
+                    ComposerSlots.Add(new SpriteSlotViewModel(x, y, spriteId));
+                }
+            }
+            else
+            {
+                ComposerWidth = group.Width * 32;
+                for (int y = 0; y < group.Height; y++)
+                for (int x = 0; x < group.Width; x++)
+                {
+                    uint spriteId = group.GetSpriteId(CurrentFrameIndex, CurrentDirection, 0, CurrentPatternZ, 0, x, y);
                     ComposerSlots.Add(new SpriteSlotViewModel(x, y, spriteId));
                 }
             }
         }
         
+        [RelayCommand]
+        private void UpdateSpriteSlot(object[] parameters)
+        {
+            if (parameters.Length != 2 || 
+                parameters[0] is not SpriteSlotViewModel slotVm || 
+                parameters[1] is not uint newSpriteId) return;
+
+            if (TempProps == null || !TempProps.FrameGroups.ContainsKey(SelectedFrameGroup)) return;
+            var group = TempProps.FrameGroups[SelectedFrameGroup];
+
+            int index = ComposerSlots.IndexOf(slotVm);
+            if (index == -1) return;
+
+            bool isItem = TempProps.Category == ThingCategory.Item;
+            
+            int targetPatternX, targetPatternY, targetX, targetY;
+
+            if (isItem)
+            {
+                int slotsPerItem = group.Width * group.Height;
+                int itemsPerRow = group.PatternX;
+                int totalSlotsPerRow = slotsPerItem * itemsPerRow;
+
+                int rowIndex = index / totalSlotsPerRow;
+                int colIndexInRow = index % totalSlotsPerRow;
+
+                targetPatternY = rowIndex;
+                targetPatternX = colIndexInRow / slotsPerItem;
+                
+                int slotInItem = colIndexInRow % slotsPerItem;
+                targetY = slotInItem / group.Width;
+                targetX = slotInItem % group.Width;
+            }
+            else
+            {
+                targetPatternX = CurrentDirection;
+                targetPatternY = 0;
+                
+                targetY = index / group.Width;
+                targetX = index % group.Width;
+            }
+
+            group.SetSpriteId(CurrentFrameIndex, targetPatternX, targetPatternY, CurrentPatternZ, 0, targetX, targetY, newSpriteId);
+            
+            slotVm.SpriteId = newSpriteId;
+            IsDirty = true;
+        }
+
+        [RelayCommand]
+        private void ResizeObject()
+        {
+            if (TempProps == null || !TempProps.FrameGroups.ContainsKey(SelectedFrameGroup)) return;
+            
+            var group = TempProps.FrameGroups[SelectedFrameGroup];
+            group.Resize(TempProps.Width, TempProps.Height, TempProps.Layers, TempProps.PatternX, TempProps.PatternY, TempProps.PatternZ, (byte)TempProps.Frames);
+            
+            UpdateComposerSlots();
+            IsDirty = true;
+        }
+
         [RelayCommand]
         public void ToggleAnimation()
         {
@@ -195,15 +290,15 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             {
                 StorageProvider = desktop.MainWindow.StorageProvider,
                 DatPath = session.DatPath,
-                SprPath = session.SprPath,
-                SelectedVersion = session.Version
+                SprPath = session.SprPath
             };
             await ShowOpenFilesDialog(desktop.MainWindow, vm);
         }
 
         private async Task ShowOpenFilesDialog(TopLevel topLevel, OpenFilesViewModel preloadedVm = null)
         {
-            string datPath = null, sprPath = null, version = null;
+            string datPath = null, sprPath = null, version = null, key = null;
+            bool useTransparency = false;
 
             if (topLevel is Window window)
             {
@@ -211,26 +306,184 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 var dialog = new OpenFilesWindow { DataContext = vm };
                 await dialog.ShowDialog(window);
                 if (!vm.Success) return;
+                
                 datPath = vm.DatPath;
                 sprPath = vm.SprPath;
-                version = vm.SelectedVersion;
+                version = vm.DetectedVersion;
+                key = vm.EncryptionKey;
+                useTransparency = vm.UseTransparency;
             }
             else
             {
                 // Browser logic...
             }
 
-            await LoadProject(datPath, sprPath, version);
+            await LoadProject(datPath, sprPath, version, key, useTransparency);
         }
 
-        public async Task LoadProject(string datPath, string sprPath, string version)
+        public async Task LoadProject(string primaryPath, string secondaryPath, string version, string key, bool useTransparency = false)
         {
             StatusText = "Loading assets...";
-            VersionString = version;
-            IsExtended = ClientFeatures.Extended;
-            IsTransparency = ClientFeatures.Transparency;
-            await LoadDataInternal(datPath, sprPath, version);
-            SessionManager.SaveSession(datPath, sprPath, version);
+            IsLoading = true;
+
+            await Task.Run(async () =>
+            {
+                try
+                {
+                    if (primaryPath.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var (dat, spr) = _metaReader.ReadMetaFile(primaryPath, key);
+                        _loadedDatFile = dat;
+                        _loadedSprFile = spr;
+                        _currentDatPath = primaryPath;
+                        _currentSprPath = null;
+                    }
+                    else
+                    {
+                        // Set features BEFORE reading
+                        ushort versionNumber = ushort.Parse(version.Replace(".", ""));
+                        ClientFeatures.SetVersion(versionNumber);
+                        ClientFeatures.Transparency = useTransparency;
+
+                        _loadedDatFile = _datReader.ReadDatFile(primaryPath, version);
+                        _loadedSprFile = _sprReader.ReadSprFile(secondaryPath, version);
+                        _currentDatPath = primaryPath;
+                        _currentSprPath = secondaryPath;
+                    }
+
+                    ThingToBitmapConverter.Provider = new SpriteProvider(_loadedSprFile);
+
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        ItemCount = _loadedDatFile.Items.Count;
+                        OutfitCount = _loadedDatFile.Outfits.Count;
+                        EffectCount = _loadedDatFile.Effects.Count;
+                        MissileCount = _loadedDatFile.Missiles.Count;
+                        SpriteCount = _loadedSprFile.SpriteCount;
+                        VersionString = _loadedDatFile.Version;
+                        IsTransparency = ClientFeatures.Transparency;
+                        IsExtended = ClientFeatures.Extended;
+
+                        TotalSpritePages = (int)Math.Ceiling((double)SpriteCount / SpritesPerPage);
+                        CurrentSpritePage = 1;
+                        LoadSpritePage();
+
+                        StatusText = "Project loaded successfully.";
+                        IsLoading = false;
+                        
+                        SelectedCategoryIndex = 0;
+                        RefreshList();
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await ShowErrorDialog("Failed to load project", ex.Message);
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => IsLoading = false);
+                }
+            });
+        }
+
+        [RelayCommand]
+        public async Task CompileProject()
+        {
+            if (_loadedDatFile == null || _loadedSprFile == null) return;
+            await ExecuteCompilation(_currentDatPath, _currentSprPath, false, null);
+        }
+
+        [RelayCommand]
+        public async Task CompileProjectAs(object parameter)
+        {
+            if (_loadedDatFile == null || _loadedSprFile == null) return;
+            if (parameter is not Visual visual) return;
+            var topLevel = TopLevel.GetTopLevel(visual);
+            if (topLevel == null) return;
+
+            var optionsVm = new CompileOptionsViewModel();
+            var optionsDialog = new CompileOptionsWindow { DataContext = optionsVm };
+            if (topLevel is Window parentWindow) await optionsDialog.ShowDialog(parentWindow);
+
+            if (!optionsVm.Success) return;
+
+            var folder = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "Select Output Folder"
+            });
+
+            if (folder.Count > 0)
+            {
+                string outputPath = folder[0].Path.LocalPath;
+                
+                if (optionsVm.IsStandardFormat)
+                {
+                    string datPath = Path.Combine(outputPath, "Tibia.dat");
+                    string sprPath = Path.Combine(outputPath, "Tibia.spr");
+                    await ExecuteCompilation(datPath, sprPath, false, null);
+                }
+                else // BSUIT Format
+                {
+                    string metaPath = Path.Combine(outputPath, "project.meta");
+                    string assetPath = Path.Combine(outputPath, "project.asset"); // Base path for assets
+                    await ExecuteCompilation(metaPath, assetPath, true, optionsVm.EncryptionKey);
+                }
+            }
+        }
+
+        private async Task ExecuteCompilation(string primaryPath, string secondaryPath, bool isBsuit, string key)
+        {
+            StatusText = "Compiling project...";
+            IsLoading = true;
+
+            await Task.Run(async () =>
+            {
+                try
+                {
+                    if (isBsuit)
+                    {
+                        _metaWriter.WriteMetaFile(_loadedDatFile, _loadedSprFile, primaryPath, !string.IsNullOrEmpty(key), key);
+                        _assetWriter.WriteAssetFiles(_loadedSprFile, secondaryPath, !string.IsNullOrEmpty(key), key);
+                    }
+                    else
+                    {
+                        _datWriter.WriteDatFile(_loadedDatFile, primaryPath);
+                        _sprWriter.WriteSprFile(_loadedSprFile, secondaryPath, _loadedDatFile.Version);
+                    }
+                    
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        StatusText = "Project compiled successfully.";
+                        IsLoading = false;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await ShowErrorDialog("Compilation Failed", ex.Message);
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => IsLoading = false);
+                }
+            });
+        }
+
+        private async Task ShowErrorDialog(string title, string message)
+        {
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                var vm = new MessageBoxViewModel(title, message);
+                var dialog = new MessageBoxWindow { DataContext = vm };
+                
+                if (Application.Current.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                {
+                    var owner = desktop.Windows.FirstOrDefault(w => w.IsActive && w.IsVisible) ?? desktop.MainWindow;
+                    
+                    if (owner != null && owner.IsVisible)
+                    {
+                        await dialog.ShowDialog(owner);
+                    }
+                    else
+                    {
+                        dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                        dialog.Show();
+                    }
+                }
+            });
         }
 
         [RelayCommand] private void OpenAbout() => new AboutWindow().Show();
@@ -241,6 +494,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         {
             if (SelectedItem != null)
             {
+                TempProps = SelectedItem.Clone();
                 IsEditing = true;
                 LoadItemPage(1);
                 UpdateComposerSlots();
@@ -253,6 +507,19 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             IsEditing = false;
             _animationTimer.Stop();
             IsPlaying = false;
+            TempProps = null;
+        }
+
+        [RelayCommand]
+        private void SaveChanges()
+        {
+            if (SelectedItem != null && TempProps != null)
+            {
+                SelectedItem.ApplyProps(TempProps);
+                SelectedItem.FrameGroups = TempProps.FrameGroups;
+                IsDirty = true;
+                StatusText = $"Item {SelectedItem.Id} saved to memory.";
+            }
         }
 
         [RelayCommand]
@@ -289,33 +556,8 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
 
         private async Task LoadDataInternal(string datPath, string sprPath, string version)
         {
-            IsLoading = true;
-            await Task.Run(() =>
-            {
-                var datFile = _datReader.ReadDatFile(datPath, version);
-                var sprFile = _sprReader.ReadSprFile(sprPath, version);
-                _loadedDatFile = datFile;
-                ThingToBitmapConverter.Provider = new SpriteProvider(sprFile);
-
-                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                {
-                    ItemCount = datFile.Items.Count;
-                    OutfitCount = datFile.Outfits.Count;
-                    EffectCount = datFile.Effects.Count;
-                    MissileCount = datFile.Missiles.Count;
-                    SpriteCount = sprFile.SpriteCount;
-
-                    TotalSpritePages = (int)Math.Ceiling((double)SpriteCount / SpritesPerPage);
-                    CurrentSpritePage = 1;
-                    LoadSpritePage();
-
-                    StatusText = "Project loaded successfully.";
-                    IsLoading = false;
-                    
-                    SelectedCategoryIndex = 0;
-                    RefreshList();
-                });
-            });
+            // This method is now a legacy wrapper
+            await LoadProject(datPath, sprPath, version, null, false);
         }
 
         private void LoadSpritePage()
@@ -339,7 +581,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             foreach (var pair in pageItems)
             {
                 var thing = pair.Value;
-                thing.ID = pair.Key;
+                thing.Id = pair.Key;
                 EditorItems.Add(thing);
             }
         }
@@ -352,7 +594,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             foreach (var pair in sourceDict)
             {
                 var thing = pair.Value;
-                thing.ID = pair.Key;
+                thing.Id = pair.Key;
                 Items.Add(thing);
             }
         }

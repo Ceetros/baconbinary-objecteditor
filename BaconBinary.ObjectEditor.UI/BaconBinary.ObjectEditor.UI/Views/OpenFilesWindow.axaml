@@ -3,71 +3,56 @@
         xmlns:vm="using:BaconBinary.ObjectEditor.UI.ViewModels"
         x:Class="BaconBinary.ObjectEditor.UI.Views.OpenFilesWindow"
         x:DataType="vm:OpenFilesViewModel"
-        Title="Open Asset Files"
-        Width="500" Height="500"
+        Title="Open Project"
+        Width="500" 
+        SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
-        Background="{DynamicResource AppBackgroundBrush}" 
+        Background="{DynamicResource AppBackgroundBrush}"
         Foreground="{DynamicResource TextPrimaryBrush}">
 
-    <Window.Styles>
-        <Style Selector="Border.GroupBox">
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="12,16,12,12"/>
-            <Setter Property="Margin" Value="0,12,0,0"/>
-        </Style>
-        <Style Selector="TextBlock.GroupHeader">
-            <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}"/>
-            <Setter Property="Margin" Value="12,-8,0,0"/>
-            <Setter Property="Padding" Value="5,0"/>
-            <Setter Property="VerticalAlignment" Value="Top"/>
-            <Setter Property="HorizontalAlignment" Value="Left"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
-            <Setter Property="FontSize" Value="11"/>
-        </Style>
-    </Window.Styles>
-
-    <Grid RowDefinitions="Auto, Auto, Auto, *, Auto" Margin="16">
-
-        <StackPanel Grid.Row="0">
-            <TextBlock Text="Client Folder:" Margin="0,0,0,4" Foreground="{DynamicResource TextSecondaryBrush}"/>
-            <Grid ColumnDefinitions="*, 90">
-                <TextBox Text="{Binding ClientPath}" IsReadOnly="True" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseCommand}" Margin="8,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+    <Grid RowDefinitions="*, Auto" Margin="16">
+        
+        <StackPanel Grid.Row="0" Spacing="12">
+            
+            <!-- Dat Path -->
+            <TextBlock Text="Project File (.dat or .meta)"/>
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox Grid.Column="0" Text="{Binding DatPath}" Watermark="Path to .dat or .meta file"/>
+                <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseDatCommand}" Margin="8,0,0,0"/>
             </Grid>
+
+            <!-- Spr Path -->
+            <TextBlock Text="Sprite File (.spr)"/>
+            <Grid ColumnDefinitions="*, Auto" IsEnabled="{Binding IsSprPathEnabled}">
+                <TextBox Grid.Column="0" Text="{Binding SprPath}" Watermark="Path to .spr file"/>
+                <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseSprCommand}" Margin="8,0,0,0"/>
+            </Grid>
+
+            <!-- Version & Encryption -->
+            <Grid ColumnDefinitions="*, 20, *">
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Detected Version"/>
+                    <Border Classes="InfoBox" Padding="8,6">
+                        <TextBlock Text="{Binding DetectedVersion}" FontWeight="Bold"/>
+                    </Border>
+                </StackPanel>
+                
+                <StackPanel Grid.Column="2" IsVisible="{Binding IsEncrypted}">
+                    <TextBlock Text="Encryption Key"/>
+                    <TextBox Text="{Binding EncryptionKey}" PasswordChar="*" Watermark="Required for this project"/>
+                </StackPanel>
+            </Grid>
+            
+            <!-- Transparency Option -->
+            <CheckBox Content="Use Transparency (Alpha Channel)" IsChecked="{Binding UseTransparency}"
+                      IsVisible="{Binding ShowTransparencyOption}"/>
+
         </StackPanel>
 
-        <Grid Grid.Row="1" Margin="0,10,0,0">
-            <Border Classes="GroupBox">
-                <ComboBox ItemsSource="{Binding Versions}" SelectedItem="{Binding SelectedVersion}" HorizontalAlignment="Stretch" Background="{DynamicResource PanelBackgroundBrush}"/>
-            </Border>
-            <TextBlock Classes="GroupHeader" Text="Version"/>
-        </Grid>
+        <!-- Buttons -->
+        <Button Grid.Row="1" Content="Load Project" Command="{Binding LoadCommand}" CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" 
+                HorizontalAlignment="Right" Classes="AccentButton" Margin="0,20,0,0"/>
 
-        <Grid Grid.Row="2" Margin="0,5,0,0">
-            <Border Classes="GroupBox">
-                <StackPanel Spacing="8">
-                    <CheckBox Content="Extended" IsChecked="{Binding IsExtended}" />
-                    <CheckBox Content="Transparency" IsChecked="{Binding IsTransparency}" />
-                    <CheckBox Content="Frame Durations" IsChecked="{Binding IsFrameDurations}" />
-                    <CheckBox Content="Frame Groups" IsChecked="{Binding IsFrameGroups}" />
-                </StackPanel>
-            </Border>
-            <TextBlock Classes="GroupHeader" Text="Options"/>
-        </Grid>
-
-        <Grid Grid.Row="4" ColumnDefinitions="*, Auto, Auto" Margin="0,20,0,0">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
-                <Border IsVisible="{Binding HasError}" Background="#D32F2F" CornerRadius="10" Width="16" Height="16">
-                    <TextBlock Text="!" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="10"/>
-                </Border>
-                <TextBlock Text="{Binding StatusMessage}" FontSize="11" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
-            </StackPanel>
-
-            <Button Grid.Column="1" Content="Load" Command="{Binding LoadCommand}" CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" Width="90" HorizontalContentAlignment="Center" Margin="0,0,8,0" Classes="AccentButton"/>
-            <Button Grid.Column="2" Content="Cancel" Command="{Binding CancelCommand}" CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" Width="90" HorizontalContentAlignment="Center"/>
-        </Grid>
     </Grid>
 </Window>

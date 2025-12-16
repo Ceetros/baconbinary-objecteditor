@@ -12,6 +12,12 @@
              Background="{DynamicResource AppBackgroundBrush}"
              Foreground="{DynamicResource TextPrimaryBrush}">
 
+    <UserControl.Styles>
+        <Style Selector="ListBox">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+    </UserControl.Styles>
+
     <UserControl.Resources>
         <cv:SpriteIdToBitmapConverter x:Key="SpriteIdToBitmapConverter"/>
         <cv:ThingToBitmapConverter x:Key="ThingToBitmapConverter"/>
@@ -25,13 +31,13 @@
             <Grid ColumnDefinitions="Auto, *, Auto">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <Button Classes="AccentButton" Content="← Back" Width="80" Command="{Binding ExitEditModeCommand}"/>
-                    <TextBlock Text="{Binding SelectedItem.ID, StringFormat='Editing: ID {0}'}" VerticalAlignment="Center" FontWeight="Bold" FontSize="16"/>
+                    <TextBlock Text="{Binding SelectedItem.Id, StringFormat='Editing: ID {0}'}" VerticalAlignment="Center" FontWeight="Bold" FontSize="16"/>
                 </StackPanel>
                 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
                     <Button Content="Import Sprite"/>
                     <Button Content="Export"/>
-                    <Button Classes="AccentButton" Content="Save Changes"/>
+                    <Button Classes="AccentButton" Content="Save Changes" Command="{Binding SaveChangesCommand}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -58,7 +64,7 @@
                                         <Border Classes="SelectableItem" Background="{DynamicResource PanelBackgroundBrush}" Margin="2">
                                             <StackPanel Spacing="4">
                                                 <Image Source="{Binding ., Converter={StaticResource ThingToBitmapConverter}}" Width="32" Height="32" Stretch="None"/>
-                                                <TextBlock Text="{Binding ID}" FontSize="9" HorizontalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                <TextBlock Text="{Binding Id}" FontSize="9" HorizontalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                             </StackPanel>
                                         </Border>
                                     </DataTemplate>
@@ -93,7 +99,8 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="sys:UInt32">
-                                        <Border Background="{DynamicResource CheckerboardBrush}" Margin="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="2">
+                                        <Border Background="{DynamicResource CheckerboardBrush}" Margin="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="2"
+                                                PointerPressed="OnSpriteDrag">
                                             <Image Source="{Binding ., Converter={StaticResource SpriteIdToBitmapConverter}}" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                     </DataTemplate>
@@ -120,15 +127,29 @@
                 
                 <!-- Visual Properties (Dimensions) -->
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="15" HorizontalAlignment="Center" Margin="10">
-                    <ComboBox ItemsSource="{Binding SelectedItem.FrameGroups.Keys}" SelectedItem="{Binding SelectedFrameGroup}" Width="120"/>
-                    <Rectangle Width="1" Height="30" Fill="{DynamicResource BorderBrush}"/>
+                    <ComboBox ItemsSource="{Binding SelectedItem.FrameGroups.Keys}" SelectedItem="{Binding SelectedFrameGroup}" Width="120"
+                              IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=1}"/>
+                    <Rectangle Width="1" Height="30" Fill="{DynamicResource BorderBrush}"
+                               IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=1}"/>
                     <StackPanel>
                         <TextBlock Text="Width" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                        <NumericUpDown Value="{Binding SelectedItem.Width}" IsEnabled="False"/>
+                        <NumericUpDown Value="{Binding TempProps.Width}" Minimum="1" Maximum="32" LostFocus="OnResizeLostFocus"/>
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="Height" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                        <NumericUpDown Value="{Binding SelectedItem.Height}" IsEnabled="False"/>
+                        <NumericUpDown Value="{Binding TempProps.Height}" Minimum="1" Maximum="32" LostFocus="OnResizeLostFocus"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Pattern X" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Value="{Binding TempProps.PatternX}" Minimum="1" Maximum="32" LostFocus="OnResizeLostFocus"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Pattern Y" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Value="{Binding TempProps.PatternY}" Minimum="1" Maximum="32" LostFocus="OnResizeLostFocus"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Pattern Z" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Value="{Binding TempProps.PatternZ}" Minimum="1" Maximum="32" LostFocus="OnResizeLostFocus"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -145,10 +166,14 @@
                         <RowDefinition Height="50"/>
                     </Grid.RowDefinitions>
 
-                    <Button Grid.Row="0" Grid.Column="1" Content="▲" HorizontalAlignment="Center" Classes="AccentButton" ToolTip.Tip="North" Command="{Binding SetDirectionCommand}" CommandParameter="North"/>
-                    <Button Grid.Row="1" Grid.Column="0" Content="◀" VerticalAlignment="Center" Classes="AccentButton" ToolTip.Tip="West" Command="{Binding SetDirectionCommand}" CommandParameter="West"/>
-                    <Button Grid.Row="1" Grid.Column="2" Content="▶" VerticalAlignment="Center" Classes="AccentButton" ToolTip.Tip="East" Command="{Binding SetDirectionCommand}" CommandParameter="East"/>
-                    <Button Grid.Row="2" Grid.Column="1" Content="▼" HorizontalAlignment="Center" Classes="AccentButton" ToolTip.Tip="South" Command="{Binding SetDirectionCommand}" CommandParameter="South"/>
+                    <Button Grid.Row="0" Grid.Column="1" Content="▲" HorizontalAlignment="Center" Classes="AccentButton" ToolTip.Tip="North" Command="{Binding SetDirectionCommand}" CommandParameter="North"
+                            IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=!0}"/>
+                    <Button Grid.Row="1" Grid.Column="0" Content="◀" VerticalAlignment="Center" Classes="AccentButton" ToolTip.Tip="West" Command="{Binding SetDirectionCommand}" CommandParameter="West"
+                            IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=!0}"/>
+                    <Button Grid.Row="1" Grid.Column="2" Content="▶" VerticalAlignment="Center" Classes="AccentButton" ToolTip.Tip="East" Command="{Binding SetDirectionCommand}" CommandParameter="East"
+                            IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=!0}"/>
+                    <Button Grid.Row="2" Grid.Column="1" Content="▼" HorizontalAlignment="Center" Classes="AccentButton" ToolTip.Tip="South" Command="{Binding SetDirectionCommand}" CommandParameter="South"
+                            IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=!0}"/>
 
                     <!-- Main Preview / Drop Area -->
                     <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="4" Margin="10">
@@ -160,7 +185,8 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:SpriteSlotViewModel">
-                                    <Border Background="{DynamicResource CheckerboardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                    <Border Background="{DynamicResource CheckerboardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                            DragDrop.AllowDrop="True" DragDrop.DragEnter="OnSlotDragEnter" DragDrop.DragLeave="OnSlotDragLeave" DragDrop.Drop="OnSlotDrop">
                                         <Image Source="{Binding SpriteId, Converter={StaticResource SpriteIdToBitmapConverter}}" Stretch="None"/>
                                     </Border>
                                 </DataTemplate>
@@ -171,7 +197,7 @@
 
                 <!-- Animation Timeline -->
                 <Border Grid.Row="2" Background="{DynamicResource HeaderBackgroundBrush}" Padding="10" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
-                    <Grid ColumnDefinitions="Auto, *">
+                    <Grid ColumnDefinitions="Auto, *, Auto">
                         <Button Grid.Column="0" Classes="AccentButton" Width="80" Command="{Binding ToggleAnimationCommand}">
                             <Panel>
                                 <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding !IsPlaying}"><TextBlock Text="▶"/><TextBlock Text="Play"/></StackPanel>
@@ -179,6 +205,10 @@
                             </Panel>
                         </Button>
                         <Slider Grid.Column="1" Minimum="0" Maximum="{Binding SelectedItem.Frames}" Value="{Binding CurrentFrameIndex}" Margin="20,0"/>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Addon/Mount (Z):" VerticalAlignment="Center"/>
+                            <NumericUpDown Value="{Binding CurrentPatternZ}" Maximum="{Binding SelectedItem.PatternZ}"/>
+                        </StackPanel>
                     </Grid>
                 </Border>
             </Grid>
@@ -192,46 +222,54 @@
                     <ScrollViewer Grid.Row="1" Padding="10">
                         <StackPanel Spacing="15">
                             
-                            <StackPanel Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}}">
+                            <!-- Global Properties -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Global" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                <CheckBox Content="Always Animate" IsChecked="{Binding TempProps.AnimateAlways}"/>
+                            </StackPanel>
+                            
+                            <Separator Background="{DynamicResource BorderBrush}" Height="1"/>
+                            
+                            <!-- Item-Specific Properties -->
+                            <StackPanel Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
                                 <TextBlock Text="General" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
                                 <UniformGrid Columns="2">
-                                    <CheckBox Content="Ground" IsChecked="{Binding SelectedItem.IsGround}" Margin="0,0,5,0"/>
-                                    <CheckBox Content="Container" IsChecked="{Binding SelectedItem.IsContainer}"/>
-                                    <CheckBox Content="Stackable" IsChecked="{Binding SelectedItem.IsStackable}" Margin="0,0,5,0"/>
-                                    <CheckBox Content="Force Use" IsChecked="{Binding SelectedItem.ForceUse}"/>
-                                    <CheckBox Content="Multi-Use" IsChecked="{Binding SelectedItem.IsMultiUse}" Margin="0,0,5,0"/>
-                                    <CheckBox Content="Writable" IsChecked="{Binding SelectedItem.IsWritable}"/>
-                                    <CheckBox Content="Readable" IsChecked="{Binding SelectedItem.IsReadable}" Margin="0,0,5,0"/>
-                                    <CheckBox Content="Fluid Container" IsChecked="{Binding SelectedItem.IsFluid}"/>
-                                    <CheckBox Content="Splash" IsChecked="{Binding SelectedItem.IsSplash}" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Ground" IsChecked="{Binding TempProps.IsGround}" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Container" IsChecked="{Binding TempProps.IsContainer}"/>
+                                    <CheckBox Content="Stackable" IsChecked="{Binding TempProps.IsStackable}" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Force Use" IsChecked="{Binding TempProps.ForceUse}"/>
+                                    <CheckBox Content="Multi-Use" IsChecked="{Binding TempProps.IsMultiUse}" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Writable" IsChecked="{Binding TempProps.IsWritable}"/>
+                                    <CheckBox Content="Readable" IsChecked="{Binding TempProps.IsReadable}" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Fluid Container" IsChecked="{Binding TempProps.IsFluid}"/>
+                                    <CheckBox Content="Fluid" IsChecked="{Binding TempProps.IsFluid}" Margin="0,0,5,0"/>
                                 </UniformGrid>
                             </StackPanel>
                             
-                            <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}}" Background="{DynamicResource BorderBrush}" Height="1"/>
+                            <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}" Background="{DynamicResource BorderBrush}" Height="1"/>
                             
-                            <StackPanel Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}}">
+                            <StackPanel Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
                                 <TextBlock Text="Movement &amp; Collision" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
                                 <UniformGrid Columns="2">
-                                    <CheckBox Content="Block Solid" IsChecked="{Binding SelectedItem.IsUnpassable}" Margin="0,0,5,0"/>
-                                    <CheckBox Content="Block Projectile" IsChecked="{Binding SelectedItem.BlockMissile}"/>
-                                    <CheckBox Content="Block Pathfind" IsChecked="{Binding SelectedItem.BlockPathfind}" Margin="0,0,5,0"/>
-                                    <CheckBox Content="Walk Stack" IsChecked="{Binding SelectedItem.WalkStack}"/>
+                                    <CheckBox Content="Block Solid" IsChecked="{Binding TempProps.IsUnpassable}" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Block Projectile" IsChecked="{Binding TempProps.BlockMissile}"/>
+                                    <CheckBox Content="Block Pathfind" IsChecked="{Binding TempProps.BlockPathfind}" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Walk Stack" IsChecked="{Binding TempProps.WalkStack}"/>
                                 </UniformGrid>
                             </StackPanel>
 
-                            <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}}" Background="{DynamicResource BorderBrush}" Height="1"/>
+                            <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}" Background="{DynamicResource BorderBrush}" Height="1"/>
 
-                            <StackPanel Spacing="5">
+                            <StackPanel Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
                                 <TextBlock Text="Visual" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
                                 <UniformGrid Columns="2">
-                                    <CheckBox Content="Always Animate" IsChecked="{Binding SelectedItem.AnimateAlways}" Margin="0,0,5,0"/>
-                                    <CheckBox Content="Lying Object" IsChecked="{Binding SelectedItem.IsLyingObject}"/>
-                                    <CheckBox Content="Top Effect" IsChecked="{Binding SelectedItem.IsTopEffect}" Margin="0,0,5,0"/>
-                                    <CheckBox Content="Translucent" IsChecked="{Binding SelectedItem.IsTranslucent}"/>
-                                    <CheckBox Content="Rotatable" IsChecked="{Binding SelectedItem.IsRotatable}" Margin="0,0,5,0"/>
-                                    <CheckBox Content="Hangable" IsChecked="{Binding SelectedItem.IsHangable}"/>
-                                    <CheckBox Content="Hook South" IsChecked="{Binding SelectedItem.IsHookSouth}" Margin="0,0,5,0"/>
-                                    <CheckBox Content="Hook East" IsChecked="{Binding SelectedItem.IsHookEast}"/>
+                                    <CheckBox Content="Lying Object" IsChecked="{Binding TempProps.IsLyingObject}"/>
+                                    <CheckBox Content="Top Effect" IsChecked="{Binding TempProps.IsTopEffect}" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Translucent" IsChecked="{Binding TempProps.IsTranslucent}"/>
+                                    <CheckBox Content="Rotatable" IsChecked="{Binding TempProps.IsRotatable}" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Hangable" IsChecked="{Binding TempProps.IsHangable}"/>
+                                    <CheckBox Content="Hook South" IsChecked="{Binding TempProps.IsHookSouth}" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Hook East" IsChecked="{Binding TempProps.IsHookEast}"/>
                                 </UniformGrid>
                             </StackPanel>
                             
@@ -239,46 +277,46 @@
 
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Displacement" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
-                                <CheckBox Content="Has Offset" IsChecked="{Binding SelectedItem.HasOffset}"/>
+                                <CheckBox Content="Has Offset" IsChecked="{Binding TempProps.HasOffset}"/>
                                 <Grid ColumnDefinitions="*, 10, *">
                                     <StackPanel Grid.Column="0">
                                         <TextBlock Text="Offset X" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                        <NumericUpDown Value="{Binding SelectedItem.OffsetX}" IsEnabled="{Binding SelectedItem.HasOffset}"/>
+                                        <NumericUpDown Value="{Binding TempProps.OffsetX}" IsEnabled="{Binding TempProps.HasOffset}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Offset Y" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                        <NumericUpDown Value="{Binding SelectedItem.OffsetY}" IsEnabled="{Binding SelectedItem.HasOffset}"/>
+                                        <NumericUpDown Value="{Binding TempProps.OffsetY}" IsEnabled="{Binding TempProps.HasOffset}"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
 
-                            <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}}" Background="{DynamicResource BorderBrush}" Height="1"/>
+                            <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}" Background="{DynamicResource BorderBrush}" Height="1"/>
 
-                            <StackPanel Spacing="8" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}}">
+                            <StackPanel Spacing="8" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
                                 <TextBlock Text="Market" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
-                                <CheckBox Content="Is Market Item" IsChecked="{Binding SelectedItem.IsMarketItem}"/>
-                                <TextBox Text="{Binding SelectedItem.MarketName}" Watermark="Market Name" IsEnabled="{Binding SelectedItem.IsMarketItem}"/>
+                                <CheckBox Content="Is Market Item" IsChecked="{Binding TempProps.IsMarketItem}"/>
+                                <TextBox Text="{Binding TempProps.MarketName}" Watermark="Market Name" IsEnabled="{Binding TempProps.IsMarketItem}"/>
                                 <UniformGrid Columns="2">
                                     <StackPanel Margin="0,0,5,0">
                                         <TextBlock Text="Category" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                        <NumericUpDown Value="{Binding SelectedItem.MarketCategory}" IsEnabled="{Binding SelectedItem.IsMarketItem}"/>
+                                        <NumericUpDown Value="{Binding TempProps.MarketCategory}" IsEnabled="{Binding TempProps.IsMarketItem}"/>
                                     </StackPanel>
                                     <StackPanel>
                                         <TextBlock Text="Trade As" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                        <NumericUpDown Value="{Binding SelectedItem.MarketTradeAs}" IsEnabled="{Binding SelectedItem.IsMarketItem}"/>
+                                        <NumericUpDown Value="{Binding TempProps.MarketTradeAs}" IsEnabled="{Binding TempProps.IsMarketItem}"/>
                                     </StackPanel>
                                     <StackPanel Margin="0,0,5,0">
                                         <TextBlock Text="Show As" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                        <NumericUpDown Value="{Binding SelectedItem.MarketShowAs}" IsEnabled="{Binding SelectedItem.IsMarketItem}"/>
+                                        <NumericUpDown Value="{Binding TempProps.MarketShowAs}" IsEnabled="{Binding TempProps.IsMarketItem}"/>
                                     </StackPanel>
                                     <StackPanel>
                                         <TextBlock Text="Restrict Level" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                        <NumericUpDown Value="{Binding SelectedItem.MarketRestrictLevel}" IsEnabled="{Binding SelectedItem.IsMarketItem}"/>
+                                        <NumericUpDown Value="{Binding TempProps.MarketRestrictLevel}" IsEnabled="{Binding TempProps.IsMarketItem}"/>
                                     </StackPanel>
                                 </UniformGrid>
                                 <StackPanel>
                                     <TextBlock Text="Restrict Profession" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                    <NumericUpDown Value="{Binding SelectedItem.MarketRestrictProfession}" IsEnabled="{Binding SelectedItem.IsMarketItem}"/>
+                                    <NumericUpDown Value="{Binding TempProps.MarketRestrictProfession}" IsEnabled="{Binding TempProps.IsMarketItem}"/>
                                 </StackPanel>
                             </StackPanel>
                             

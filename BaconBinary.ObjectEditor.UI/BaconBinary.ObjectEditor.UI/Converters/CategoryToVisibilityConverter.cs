@@ -10,15 +10,25 @@ namespace BaconBinary.ObjectEditor.UI.Converters
         {
             if (value is int categoryIndex)
             {
-                
-                bool isItem = categoryIndex == 0;
-                
-                if (parameter is string paramStr && paramStr.Equals("Inverse", StringComparison.OrdinalIgnoreCase))
+                int targetIndex = 0;
+                bool inverse = false;
+
+                if (parameter is string paramStr)
                 {
-                    return !isItem;
+                    if (paramStr.StartsWith("!"))
+                    {
+                        inverse = true;
+                        paramStr = paramStr.Substring(1);
+                    }
+
+                    if (int.TryParse(paramStr, out int parsedIndex))
+                    {
+                        targetIndex = parsedIndex;
+                    }
                 }
 
-                return isItem;
+                bool match = categoryIndex == targetIndex;
+                return inverse ? !match : match;
             }
             return true;
         }

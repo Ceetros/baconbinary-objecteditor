@@ -36,17 +36,17 @@
                                 </MenuItem.Icon>
                             </MenuItem>
                             
-                            <MenuItem Header="Save Project" InputGesture="Ctrl+S">
+                            <Separator/>
+                            
+                            <MenuItem Header="Compile" Command="{Binding CompileProjectCommand}" InputGesture="Ctrl+S">
                                 <MenuItem.Icon>
                                     <PathIcon Data="{StaticResource SaveRegular}" />
                                 </MenuItem.Icon>
                             </MenuItem>
                             
-                            <Separator/>
-                            
-                            <MenuItem Header="Compile Project" InputGesture="Ctrl+B">
+                            <MenuItem Header="Compile As..." Command="{Binding CompileProjectAsCommand}" CommandParameter="{Binding #RootView}" InputGesture="Ctrl+Shift+S">
                                 <MenuItem.Icon>
-                                    <PathIcon Data="{StaticResource ArrowUploadRegular}" />
+                                    <PathIcon Data="{StaticResource SaveAsRegular}" />
                                 </MenuItem.Icon>
                             </MenuItem>
                             
@@ -90,7 +90,7 @@
                             
                             <Border Grid.Row="1" Background="{DynamicResource HeaderBackgroundBrush}" CornerRadius="0,0,8,8" Padding="10,6">
                                 <Grid ColumnDefinitions="*, Auto">
-                                    <TextBlock Text="{Binding SelectedItem.ID, StringFormat='ID: {0}'}" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding SelectedItem.Id, StringFormat='ID: {0}'}" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                     <TextBlock Grid.Column="1" Text="Item" Foreground="{DynamicResource AccentBrush}" FontSize="11" VerticalAlignment="Center"/>
                                 </Grid>
                             </Border>
@@ -106,14 +106,14 @@
                                 <StackPanel Spacing="8">
                                     <TextBlock Text="General Properties" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
                                     <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto, Auto" >
-                                        <CheckBox Grid.Row="0" Grid.Column="0" Content="Ground" IsChecked="{Binding SelectedItem.IsGround, FallbackValue=False}"/>
-                                        <CheckBox Grid.Row="0" Grid.Column="1" Content="Container" IsChecked="{Binding SelectedItem.IsContainer, FallbackValue=False}"/>
-                                        <CheckBox Grid.Row="1" Grid.Column="0" Content="Stackable" IsChecked="{Binding SelectedItem.IsStackable, FallbackValue=False}"/>
-                                        <CheckBox Grid.Row="1" Grid.Column="1" Content="Force Use" IsChecked="{Binding SelectedItem.ForceUse, FallbackValue=False}"/>
-                                        <CheckBox Grid.Row="2" Grid.Column="0" Content="Writable" IsChecked="{Binding SelectedItem.IsWritable, FallbackValue=False}"/>
-                                        <CheckBox Grid.Row="2" Grid.Column="1" Content="Fluid" IsChecked="{Binding SelectedItem.IsFluid, FallbackValue=False}"/>
-                                        <CheckBox Grid.Row="3" Grid.Column="0" Content="Multi-Use" IsChecked="{Binding SelectedItem.IsMultiUse, FallbackValue=False}"/>
-                                        <CheckBox Grid.Row="3" Grid.Column="1" Content="Rotatable" IsChecked="{Binding SelectedItem.IsRotatable, FallbackValue=False}"/>
+                                        <CheckBox Content="Ground" IsChecked="{Binding SelectedItem.IsGround, FallbackValue=False}"/>
+                                        <CheckBox Content="Container" IsChecked="{Binding SelectedItem.IsContainer, FallbackValue=False}"/>
+                                        <CheckBox Content="Stackable" IsChecked="{Binding SelectedItem.IsStackable, FallbackValue=False}"/>
+                                        <CheckBox Content="Force Use" IsChecked="{Binding SelectedItem.ForceUse, FallbackValue=False}"/>
+                                        <CheckBox Content="Writable" IsChecked="{Binding SelectedItem.IsWritable, FallbackValue=False}"/>
+                                        <CheckBox Content="Fluid" IsChecked="{Binding SelectedItem.IsFluid, FallbackValue=False}"/>
+                                        <CheckBox Content="Multi-Use" IsChecked="{Binding SelectedItem.IsMultiUse, FallbackValue=False}"/>
+                                        <CheckBox Content="Rotatable" IsChecked="{Binding SelectedItem.IsRotatable, FallbackValue=False}"/>
                                     </Grid>
                                 </StackPanel>
 
@@ -188,7 +188,7 @@
                                         BorderBrush="{DynamicResource BorderBrush}" 
                                         BorderThickness="1" 
                                         CornerRadius="4"
-                                        ToolTip.Tip="{Binding ID, StringFormat='ID: {0}'}">
+                                        ToolTip.Tip="{Binding Id, StringFormat='ID: {0}'}">
                                     <Border.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="Edit Item" Command="{Binding $parent[ListBox].DataContext.EditItemCommand}"/>

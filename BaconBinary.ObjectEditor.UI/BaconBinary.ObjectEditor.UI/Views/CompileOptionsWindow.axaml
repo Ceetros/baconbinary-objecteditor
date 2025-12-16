@@ -1,0 +1,44 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BaconBinary.ObjectEditor.UI.ViewModels"
+        x:Class="BaconBinary.ObjectEditor.UI.Views.CompileOptionsWindow"
+        x:DataType="vm:CompileOptionsViewModel"
+        Title="Compile Options"
+        Width="400" Height="350"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource TextPrimaryBrush}">
+
+    <Grid RowDefinitions="*, Auto" Margin="16">
+        
+        <StackPanel Grid.Row="0" Spacing="20">
+            
+            <!-- Format Selection -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Output Format" FontWeight="Bold"/>
+                <RadioButton Content="Standard (.dat / .spr)" IsChecked="{Binding IsStandardFormat}" GroupName="Format"/>
+                <RadioButton Content="BSUIT (.meta / .asset)" IsChecked="{Binding IsBsuitFormat}" GroupName="Format"/>
+            </StackPanel>
+
+            <Separator Background="{DynamicResource BorderBrush}"/>
+
+            <!-- Encryption Options -->
+            <StackPanel Spacing="8" IsEnabled="{Binding IsBsuitFormat}">
+                <TextBlock Text="Security" FontWeight="Bold"/>
+                <CheckBox Content="Enable AES-256 Encryption" IsChecked="{Binding IsEncryptionEnabled}"/>
+                <TextBox Text="{Binding EncryptionKey}" Watermark="Encryption Key (32 characters)" 
+                         IsEnabled="{Binding IsEncryptionEnabled}"
+                         PasswordChar="*"/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <!-- Buttons -->
+        <Grid Grid.Row="1" ColumnDefinitions="*, Auto, Auto" Margin="0,20,0,0">
+            <Button Grid.Column="1" Content="Confirm" Command="{Binding ConfirmCommand}" CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" Width="100" Classes="AccentButton"/>
+            <Button Grid.Column="2" Content="Cancel" Command="{Binding CancelCommand}" CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" Width="100" Margin="10,0,0,0"/>
+        </Grid>
+        
+    </Grid>
+</Window>
