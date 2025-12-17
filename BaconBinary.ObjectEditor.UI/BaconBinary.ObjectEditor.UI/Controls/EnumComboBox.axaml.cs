@@ -15,6 +15,9 @@ namespace BaconBinary.ObjectEditor.UI.Controls
         public static readonly StyledProperty<object> SelectedItemProperty =
             AvaloniaProperty.Register<EnumComboBox, object>(nameof(SelectedItem), defaultBindingMode: BindingMode.TwoWay);
 
+        private static readonly DirectProperty<EnumComboBox, IEnumerable<object>> ItemsProperty =
+            AvaloniaProperty.RegisterDirect<EnumComboBox, IEnumerable<object>>(nameof(Items), o => o.Items);
+
         public Type EnumType
         {
             get => GetValue(EnumTypeProperty);
@@ -27,7 +30,12 @@ namespace BaconBinary.ObjectEditor.UI.Controls
             set => SetValue(SelectedItemProperty, value);
         }
 
-        public List<object> Items { get; set; }
+        private IEnumerable<object> _items;
+        public IEnumerable<object> Items
+        {
+            get => _items;
+            private set => SetAndRaise(ItemsProperty, ref _items, value);
+        }
 
         public EnumComboBox()
         {
@@ -38,12 +46,9 @@ namespace BaconBinary.ObjectEditor.UI.Controls
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {
             base.OnPropertyChanged(change);
-            if (change.Property == EnumTypeProperty)
+            if (change.Property == EnumTypeProperty && EnumType != null && EnumType.IsEnum)
             {
-                if (EnumType != null && EnumType.IsEnum)
-                {
-                    Items = System.Enum.GetValues(EnumType).Cast<object>().ToList();
-                }
+                Items = System.Enum.GetValues(EnumType).Cast<object>().ToList();
             }
         }
     }

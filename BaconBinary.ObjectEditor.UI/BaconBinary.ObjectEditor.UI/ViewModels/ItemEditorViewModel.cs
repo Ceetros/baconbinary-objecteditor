@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -39,6 +40,27 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             _xmlPath = xmlPath;
             
             LoadPage(1);
+        }
+
+        partial void OnSelectedItemChanged(ServerItem oldValue, ServerItem newValue)
+        {
+            if (oldValue != null)
+            {
+                oldValue.PropertyChanged -= OnSelectedItemPropertyChanged;
+            }
+
+            if (newValue != null)
+            {
+                newValue.PropertyChanged += OnSelectedItemPropertyChanged;
+            }
+        }
+
+        private void OnSelectedItemPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ServerItem.ClientId) || e.PropertyName == nameof(ServerItem.Name))
+            {
+                LoadPage(CurrentPage);
+            }
         }
 
         public void LoadFiles(string datPath)
@@ -85,6 +107,13 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             {
                 LoadPage(newPage);
             }
+        }
+
+        [RelayCommand]
+        private void CreateNewItem()
+        {
+            ushort newId = (ushort)(_serverItems.Keys.Max() + 1);
+            CreateNewItem(newId);
         }
 
         public void CreateNewItem(uint id)

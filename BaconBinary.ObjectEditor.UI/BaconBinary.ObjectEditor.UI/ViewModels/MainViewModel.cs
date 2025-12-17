@@ -403,6 +403,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                     }
 
                     ThingToBitmapConverter.Provider = new SpriteProvider(_loadedSprFile);
+                    new ItemImageService(_loadedDatFile);
 
                     await Dispatcher.UIThread.InvokeAsync(async () =>
                     {
@@ -1059,46 +1060,40 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         
         private async Task LoadItemEditorFiles(string otbPath, string xmlPath)
         {
-            if (string.IsNullOrEmpty(_currentDatPath))
+            if (string.IsNullOrEmpty(otbPath) || !File.Exists(otbPath))
             {
-                await ShowErrorDialog("Error", "Please open a sprite project first.");
+                ItemEditorEnabled = false;
                 return;
             }
 
-            if (!File.Exists(otbPath) || !File.Exists(xmlPath))
-            {
-                var topLevel = TopLevel.GetTopLevel((Application.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow);
-                if (topLevel == null) return;
+            StatusText = "Loading item editor files...";
+            IsLoading = true;
 
-                var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            try
+            {
+                await Task.Run(() =>
                 {
-                    Title = "Select items.otb",
-                    AllowMultiple = false,
-                    FileTypeFilter = new[] { new FilePickerFileType("OTB Files") { Patterns = new[] { "*.otb" } } }
+                    _serverItems = _otbReader.Read(otbPath);
+                    if (File.Exists(xmlPath))
+                    {
+                        _itemsXmlReader.Read(xmlPath, _serverItems);
+                    }
                 });
 
-                if (files.Count > 0)
-                {
-                    otbPath = files[0].Path.LocalPath;
-                    xmlPath = Path.ChangeExtension(otbPath, ".xml");
-                }
-                else
-                {
-                    return;
-                }
+                _currentOtbPath = otbPath;
+                _currentXmlPath = xmlPath;
+                ItemEditorEnabled = true;
+                StatusText = "Item editor files loaded.";
             }
-            
-            if (!File.Exists(otbPath) || !File.Exists(xmlPath))
+            catch (Exception ex)
             {
-                await ShowErrorDialog("Error", "Could not find matching .otb and .xml files in the same directory.");
-                return;
+                await ShowErrorDialog("Failed to load item editor files", ex.Message);
+                ItemEditorEnabled = false;
             }
-
-            _currentOtbPath = otbPath;
-            _currentXmlPath = xmlPath;
-            ItemEditorEnabled = true;
-            RefreshList();
-            StatusText = "Item editor files loaded.";
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         [RelayCommand]

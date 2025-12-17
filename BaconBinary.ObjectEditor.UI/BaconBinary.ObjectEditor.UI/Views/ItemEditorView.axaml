@@ -1,10 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:BaconBinary.ObjectEditor.UI.ViewModels"
-        xmlns:models="using:BaconBinary.Core.Models"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="using:BaconBinary.ObjectEditor.UI.Controls"
+        xmlns:converters="using:BaconBinary.ObjectEditor.UI.Converters"
+        xmlns:models="using:BaconBinary.Core.Models"
         xmlns:enum="clr-namespace:BaconBinary.Core.Enum;assembly=BaconBinary.Core"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="BaconBinary.ObjectEditor.UI.Views.ItemEditorView"
@@ -13,6 +14,10 @@
         Title="Item Editor"
         Width="1200" Height="800"
         Background="{DynamicResource AppBackgroundBrush}">
+    
+    <Window.Resources>
+        <converters:ServerItemToBitmapConverter x:Key="ServerItemToBitmapConverter"/>
+    </Window.Resources>
 
     <Grid ColumnDefinitions="*, 4, 300">
         <!-- Main Content -->
@@ -20,6 +25,44 @@
             <StackPanel Margin="10" Spacing="10">
                 <!-- OTB Properties -->
                 <TextBlock Text="OTB Properties" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <Border Classes="Panel">
+                    <Grid ColumnDefinitions="Auto, *, Auto, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto"
+                          ColumnSpacing="10" RowSpacing="10" Margin="10">
+                        
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Server ID:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding SelectedItem.Id}" IsEnabled="False"/>
+                        
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Client ID:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="0" Grid.Column="3" Value="{Binding SelectedItem.ClientId}"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Name:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding SelectedItem.Name}"/>
+                        
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Ground Speed:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding SelectedItem.GroundSpeed}"/>
+                        
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Minimap Color:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="2" Grid.Column="3" Value="{Binding SelectedItem.MinimapColor}"/>
+                        
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Max Read/Write Chars:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding SelectedItem.MaxReadWriteChars}"/>
+                        
+                        <TextBlock Grid.Row="3" Grid.Column="2" Text="Max Read Chars:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="3" Grid.Column="3" Value="{Binding SelectedItem.MaxReadChars}"/>
+                        
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Light Level:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding SelectedItem.LightLevel}"/>
+                        
+                        <TextBlock Grid.Row="4" Grid.Column="2" Text="Light Color:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="4" Grid.Column="3" Value="{Binding SelectedItem.LightColor}"/>
+                        
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Stack Order:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <controls:EnumComboBox Grid.Row="5" Grid.Column="1" EnumType="{x:Type enum:TileStackOrder}" SelectedItem="{Binding SelectedItem.StackOrder}"/>
+                        
+                        <TextBlock Grid.Row="5" Grid.Column="2" Text="Trade As:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="5" Grid.Column="3" Value="{Binding SelectedItem.TradeAs}"/>
+                    </Grid>
+                </Border>
                 <Border Classes="Panel">
                     <UniformGrid Columns="4" Margin="10">
                         <CheckBox Content="Unpassable" IsChecked="{Binding SelectedItem.Unpassable}"/>
@@ -118,13 +161,18 @@
         <GridSplitter Grid.Column="1" Background="{DynamicResource BorderBrush}" ResizeBehavior="PreviousAndNext"/>
 
         <!-- Right Column: Item List -->
-        <Grid Grid.Column="2" RowDefinitions="*, Auto" Background="{DynamicResource PanelBackgroundBrush}">
-            <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"
+        <Grid Grid.Column="2" RowDefinitions="*, Auto, Auto" Background="{DynamicResource PanelBackgroundBrush}">
+            <ListBox Grid.Row="0" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      Background="Transparent" BorderThickness="0">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="models:ServerItem">
-                        <TextBlock Text="{Binding NameWithId}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Background="{DynamicResource CheckerboardBrush}" Width="32" Height="32">
+                                <Image Source="{Binding ., Converter={StaticResource ServerItemToBitmapConverter}}" Stretch="None"/>
+                            </Border>
+                            <TextBlock Text="{Binding NameWithId}" VerticalAlignment="Center"/>
+                        </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -141,6 +189,8 @@
                 </Grid>
                 <ComboBox ItemsSource="{Binding ItemsPerPageOptions}" SelectedItem="{Binding ItemsPerPage}"/>
             </StackPanel>
+            
+            <Button Grid.Row="2" Content="New Item" Command="{Binding CreateNewItemCommand}" Classes="AccentButton" Margin="5"/>
         </Grid>
     </Grid>
 </Window>
