@@ -1,0 +1,146 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BaconBinary.ObjectEditor.UI.ViewModels"
+        xmlns:models="using:BaconBinary.Core.Models"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="using:BaconBinary.ObjectEditor.UI.Controls"
+        xmlns:enum="clr-namespace:BaconBinary.Core.Enum;assembly=BaconBinary.Core"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="BaconBinary.ObjectEditor.UI.Views.ItemEditorView"
+        x:DataType="vm:ItemEditorViewModel"
+        Icon="/Assets/icon.ico"
+        Title="Item Editor"
+        Width="1200" Height="800"
+        Background="{DynamicResource AppBackgroundBrush}">
+
+    <Grid ColumnDefinitions="*, 4, 300">
+        <!-- Main Content -->
+        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="10" Spacing="10">
+                <!-- OTB Properties -->
+                <TextBlock Text="OTB Properties" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <Border Classes="Panel">
+                    <UniformGrid Columns="4" Margin="10">
+                        <CheckBox Content="Unpassable" IsChecked="{Binding SelectedItem.Unpassable}"/>
+                        <CheckBox Content="Block Missiles" IsChecked="{Binding SelectedItem.BlockMissiles}"/>
+                        <CheckBox Content="Block Pathfinder" IsChecked="{Binding SelectedItem.BlockPathfinder}"/>
+                        <CheckBox Content="Has Elevation" IsChecked="{Binding SelectedItem.HasElevation}"/>
+                        <CheckBox Content="Force Use" IsChecked="{Binding SelectedItem.ForceUse}"/>
+                        <CheckBox Content="Multi Use" IsChecked="{Binding SelectedItem.MultiUse}"/>
+                        <CheckBox Content="Pickupable" IsChecked="{Binding SelectedItem.Pickupable}"/>
+                        <CheckBox Content="Movable" IsChecked="{Binding SelectedItem.Movable}"/>
+                        <CheckBox Content="Stackable" IsChecked="{Binding SelectedItem.Stackable}"/>
+                        <CheckBox Content="Has Stack Order" IsChecked="{Binding SelectedItem.HasStackOrder}"/>
+                        <CheckBox Content="Readable" IsChecked="{Binding SelectedItem.Readable}"/>
+                        <CheckBox Content="Rotatable" IsChecked="{Binding SelectedItem.Rotatable}"/>
+                        <CheckBox Content="Hangable" IsChecked="{Binding SelectedItem.Hangable}"/>
+                        <CheckBox Content="Hook South" IsChecked="{Binding SelectedItem.HookSouth}"/>
+                        <CheckBox Content="Hook East" IsChecked="{Binding SelectedItem.HookEast}"/>
+                        <CheckBox Content="Allow Distance Read" IsChecked="{Binding SelectedItem.AllowDistanceRead}"/>
+                        <CheckBox Content="Has Charges" IsChecked="{Binding SelectedItem.HasCharges}"/>
+                        <CheckBox Content="Ignore Look" IsChecked="{Binding SelectedItem.IgnoreLook}"/>
+                        <CheckBox Content="Full Ground" IsChecked="{Binding SelectedItem.FullGround}"/>
+                        <CheckBox Content="Is Animation" IsChecked="{Binding SelectedItem.IsAnimation}"/>
+                    </UniformGrid>
+                </Border>
+
+                <!-- XML Properties -->
+                <TextBlock Text="XML Properties" FontWeight="Bold" FontSize="16" Margin="0,20,0,0" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <Border Classes="Panel">
+                    <Grid ColumnDefinitions="Auto, *, Auto, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto"
+                          ColumnSpacing="10" RowSpacing="10" Margin="10">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Article:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SelectedItem.Article}"/>
+                        
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Editor Suffix:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SelectedItem.EditorSuffix}"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Description:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding SelectedItem.Description}" TextWrapping="Wrap" AcceptsReturn="True" Height="100"/>
+                        
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Item Type:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <controls:EnumComboBox Grid.Row="3" Grid.Column="1" EnumType="{x:Type enum:ItemType}" SelectedItem="{Binding SelectedItem.ItemType}"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="2" Text="Slot Type:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <controls:EnumComboBox Grid.Row="3" Grid.Column="3" EnumType="{x:Type enum:SlotType}" SelectedItem="{Binding SelectedItem.SlotType}"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Weapon Type:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <controls:EnumComboBox Grid.Row="4" Grid.Column="1" EnumType="{x:Type enum:WeaponType}" SelectedItem="{Binding SelectedItem.WeaponType}"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="2" Text="Ammo Type:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <controls:EnumComboBox Grid.Row="4" Grid.Column="3" EnumType="{x:Type enum:AmmoType}" SelectedItem="{Binding SelectedItem.AmmoType}"/>
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Shoot Type:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <controls:EnumComboBox Grid.Row="5" Grid.Column="1" EnumType="{x:Type enum:ShootType}" SelectedItem="{Binding SelectedItem.ShootType}"/>
+
+                        <TextBlock Grid.Row="5" Grid.Column="2" Text="Effect:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <controls:EnumComboBox Grid.Row="5" Grid.Column="3" EnumType="{x:Type enum:ShootType}" SelectedItem="{Binding SelectedItem.Effect}"/>
+                        
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Attack:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="6" Grid.Column="1" Value="{Binding SelectedItem.Attack}"/>
+                        
+                        <TextBlock Grid.Row="6" Grid.Column="2" Text="Defense:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="6" Grid.Column="3" Value="{Binding SelectedItem.Defense}"/>
+                        
+                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Armor:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding SelectedItem.Armor}"/>
+                        
+                        <TextBlock Grid.Row="7" Grid.Column="2" Text="Charges:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="7" Grid.Column="3" Value="{Binding SelectedItem.Charges}"/>
+                        
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="Duration:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="8" Grid.Column="1" Value="{Binding SelectedItem.Duration}"/>
+                        
+                        <TextBlock Grid.Row="8" Grid.Column="2" Text="Decay To:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="8" Grid.Column="3" Value="{Binding SelectedItem.DecayTo}"/>
+                        
+                        <TextBlock Grid.Row="9" Grid.Column="0" Text="Rotate To:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="9" Grid.Column="1" Value="{Binding SelectedItem.RotateTo}"/>
+                        
+                        <TextBlock Grid.Row="9" Grid.Column="2" Text="Range:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="9" Grid.Column="3" Value="{Binding SelectedItem.Range}"/>
+                        
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="Weight:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="10" Grid.Column="1" Value="{Binding SelectedItem.Weight}"/>
+                        
+                        <TextBlock Grid.Row="10" Grid.Column="2" Text="Worth:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="10" Grid.Column="3" Value="{Binding SelectedItem.Worth}"/>
+                        
+                        <TextBlock Grid.Row="11" Grid.Column="0" Text="Speed:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <NumericUpDown Grid.Row="11" Grid.Column="1" Value="{Binding SelectedItem.Speed}"/>
+                    </Grid>
+                </Border>
+                <Button Content="Save Changes" Command="{Binding SaveChangesCommand}" HorizontalAlignment="Right" Classes="AccentButton"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <GridSplitter Grid.Column="1" Background="{DynamicResource BorderBrush}" ResizeBehavior="PreviousAndNext"/>
+
+        <!-- Right Column: Item List -->
+        <Grid Grid.Column="2" RowDefinitions="*, Auto" Background="{DynamicResource PanelBackgroundBrush}">
+            <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     Background="Transparent" BorderThickness="0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:ServerItem">
+                        <TextBlock Text="{Binding NameWithId}"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            
+            <StackPanel Grid.Row="1" Orientation="Vertical" Spacing="5" Margin="5">
+                <Grid ColumnDefinitions="Auto, Auto, *, Auto, Auto">
+                    <Button Grid.Column="0" Content="&lt;&lt;" Command="{Binding ChangePageCommand}" CommandParameter="first"/>
+                    <Button Grid.Column="1" Content="&lt;" Command="{Binding ChangePageCommand}" CommandParameter="prev"/>
+                    <TextBlock Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}">
+                        <Run Text="{Binding CurrentPage}"/>/<Run Text="{Binding TotalPages}"/>
+                    </TextBlock>
+                    <Button Grid.Column="3" Content="&gt;" Command="{Binding ChangePageCommand}" CommandParameter="next"/>
+                    <Button Grid.Column="4" Content="&gt;&gt;" Command="{Binding ChangePageCommand}" CommandParameter="last"/>
+                </Grid>
+                <ComboBox ItemsSource="{Binding ItemsPerPageOptions}" SelectedItem="{Binding ItemsPerPage}"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

@@ -27,6 +27,7 @@ using BaconBinary.ObjectEditor.UI.Services;
 using BaconBinary.ObjectEditor.UI.Views;
 using SkiaSharp;
 using System.Collections.Concurrent;
+using BaconBinary.Core.IO.Otb;
 
 namespace BaconBinary.ObjectEditor.UI.ViewModels
 {
@@ -35,10 +36,12 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         private readonly DatReader _datReader = new();
         private readonly SprReader _sprReader = new();
         private readonly MetaReader _metaReader = new();
-        private readonly DatWriter _datWriter = new();
-        private readonly SprWriter _sprWriter = new();
-        private readonly MetaWriter _metaWriter = new();
-        private readonly AssetWriter _assetWriter = new();
+        private readonly OtbReader _otbReader = new();
+        private readonly ItemsXmlReader _itemsXmlReader = new();
+        
+        private ServerItemList _serverItems;
+        private string _currentOtbPath;
+        private string _currentXmlPath;
         
         private readonly DispatcherTimer _animationTimer;
         
@@ -65,6 +68,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         [ObservableProperty] private bool _isLoading;
         
         [ObservableProperty] private bool _isEditing = false;
+        [ObservableProperty] private bool _itemEditorEnabled = false;
 
         public ObservableCollection<ThingType> AllItems { get; } = new();
         public ObservableCollection<ThingType> MainViewItems { get; } = new();
@@ -93,6 +97,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         private SprFile _loadedSprFile;
         private string _currentDatPath;
         private string _currentSprPath;
+        private readonly HashSet<uint> _serverItemIds = new();
 
         [ObservableProperty] private string _statusText = "Ready.";
 
@@ -342,7 +347,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
 
         private async Task ShowOpenFilesDialog(TopLevel topLevel, OpenFilesViewModel preloadedVm = null)
         {
-            string datPath = null, sprPath = null, version = null, key = null;
+            string datPath = null, sprPath = null, otbPath = null, xmlPath = null, version = null, key = null;
             bool useTransparency = false;
 
             if (topLevel is Window window)
@@ -354,6 +359,8 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 
                 datPath = vm.DatPath;
                 sprPath = vm.SprPath;
+                otbPath = vm.OtbPath;
+                xmlPath = vm.XmlPath;
                 version = vm.DetectedVersion;
                 key = vm.EncryptionKey;
                 useTransparency = vm.UseTransparency;
@@ -363,10 +370,10 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 // TODO: Browser
             }
 
-            await LoadProject(datPath, sprPath, version, key, useTransparency);
+            await LoadProject(datPath, sprPath, otbPath, xmlPath, version, key, useTransparency);
         }
 
-        public async Task LoadProject(string primaryPath, string secondaryPath, string version, string key, bool useTransparency = false)
+        public async Task LoadProject(string primaryPath, string secondaryPath, string otbPath, string xmlPath, string version, string key, bool useTransparency = false)
         {
             StatusText = "Loading assets...";
             IsLoading = true;
@@ -397,7 +404,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
 
                     ThingToBitmapConverter.Provider = new SpriteProvider(_loadedSprFile);
 
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    await Dispatcher.UIThread.InvokeAsync(async () =>
                     {
                         ItemCount = _loadedDatFile.Items.Count;
                         OutfitCount = _loadedDatFile.Outfits.Count;
@@ -416,13 +423,15 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                         IsLoading = false;
                         
                         SelectedCategoryIndex = 0;
+                        
+                        await LoadItemEditorFiles(otbPath, xmlPath);
                         RefreshList();
                     });
                 }
                 catch (Exception ex)
                 {
                     await ShowErrorDialog("Failed to load project", ex.Message);
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() => IsLoading = false);
+                    Dispatcher.UIThread.Post(() => IsLoading = false);
                 }
             });
         }
@@ -483,13 +492,13 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 {
                     if (isBsuit)
                     {
-                        _metaWriter.WriteMetaFile(_loadedDatFile, _loadedSprFile, primaryPath, !string.IsNullOrEmpty(key), key);
-                        _assetWriter.WriteAssetFiles(_loadedSprFile, secondaryPath, !string.IsNullOrEmpty(key), key);
+                        new MetaWriter().WriteMetaFile(_loadedDatFile, _loadedSprFile, primaryPath, !string.IsNullOrEmpty(key), key);
+                        new AssetWriter().WriteAssetFiles(_loadedSprFile, secondaryPath, !string.IsNullOrEmpty(key), key);
                     }
                     else
                     {
-                        _datWriter.WriteDatFile(_loadedDatFile, primaryPath);
-                        _sprWriter.WriteSprFile(_loadedSprFile, secondaryPath, _loadedDatFile.Version);
+                        new DatWriter().WriteDatFile(_loadedDatFile, primaryPath);
+                        new SprWriter().WriteSprFile(_loadedSprFile, secondaryPath, _loadedDatFile.Version);
                     }
                     
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
@@ -588,7 +597,6 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                                 CompressedPixels = compressedData, 
                                 Size = (ushort)compressedData.Length 
                             };
-                            
                             newSpritesMap[currentId] = newSprite;
                         }
                     });
@@ -1007,12 +1015,24 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         private void RefreshList()
         {
             AllItems.Clear();
+            _serverItemIds.Clear();
+            
+            if (!string.IsNullOrEmpty(_currentOtbPath) && File.Exists(_currentOtbPath))
+            {
+                _serverItems = _otbReader.Read(_currentOtbPath);
+                foreach (var id in _serverItems.Keys)
+                {
+                    _serverItemIds.Add(id);
+                }
+            }
+
             var sourceDict = GetCurrentCategoryDictionary();
             if (sourceDict == null) return;
             foreach (var pair in sourceDict)
             {
                 var thing = pair.Value;
                 thing.Id = pair.Key;
+                thing.HasServerItem = _serverItemIds.Contains(thing.Id);
                 AllItems.Add(thing);
             }
             LoadMainViewPage(1);
@@ -1035,6 +1055,109 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         {
             try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
             catch { /* Handle exceptions for different platforms */ }
+        }
+        
+        private async Task LoadItemEditorFiles(string otbPath, string xmlPath)
+        {
+            if (string.IsNullOrEmpty(_currentDatPath))
+            {
+                await ShowErrorDialog("Error", "Please open a sprite project first.");
+                return;
+            }
+
+            if (!File.Exists(otbPath) || !File.Exists(xmlPath))
+            {
+                var topLevel = TopLevel.GetTopLevel((Application.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow);
+                if (topLevel == null) return;
+
+                var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+                {
+                    Title = "Select items.otb",
+                    AllowMultiple = false,
+                    FileTypeFilter = new[] { new FilePickerFileType("OTB Files") { Patterns = new[] { "*.otb" } } }
+                });
+
+                if (files.Count > 0)
+                {
+                    otbPath = files[0].Path.LocalPath;
+                    xmlPath = Path.ChangeExtension(otbPath, ".xml");
+                }
+                else
+                {
+                    return;
+                }
+            }
+            
+            if (!File.Exists(otbPath) || !File.Exists(xmlPath))
+            {
+                await ShowErrorDialog("Error", "Could not find matching .otb and .xml files in the same directory.");
+                return;
+            }
+
+            _currentOtbPath = otbPath;
+            _currentXmlPath = xmlPath;
+            ItemEditorEnabled = true;
+            RefreshList();
+            StatusText = "Item editor files loaded.";
+        }
+
+        [RelayCommand]
+        private void OpenItemEditor()
+        {
+            if (!ItemEditorEnabled)
+            {
+                ShowErrorDialog("Error", "Please load .otb and .xml files first.");
+                return;
+            }
+
+            var itemEditorVm = new ItemEditorViewModel(_serverItems, _currentOtbPath, _currentXmlPath);
+            var itemEditorView = new ItemEditorView
+            {
+                DataContext = itemEditorVm
+            };
+            itemEditorView.Show();
+        }
+
+        [RelayCommand]
+        private void CreateNewServerItem()
+        {
+            if (SelectedItem == null) return;
+            
+            if (!ItemEditorEnabled)
+            {
+                ShowErrorDialog("Error", "Please load .otb and .xml files first.");
+                return;
+            }
+
+            var itemEditorVm = new ItemEditorViewModel(_serverItems, _currentOtbPath, _currentXmlPath);
+            var itemEditorView = new ItemEditorView
+            {
+                DataContext = itemEditorVm
+            };
+            
+            itemEditorView.Show();
+            itemEditorVm.CreateNewItem(SelectedItem.Id);
+        }
+
+        [RelayCommand]
+        private void GoToServerItem()
+        {
+            if (SelectedItem == null) return;
+            
+            if (!ItemEditorEnabled)
+            {
+                ShowErrorDialog("Error", "Please load .otb and .xml files first.");
+                return;
+            }
+
+            var itemEditorVm = new ItemEditorViewModel(_serverItems, _currentOtbPath, _currentXmlPath);
+            var itemEditorView = new ItemEditorView
+            {
+                DataContext = itemEditorVm
+            };
+            
+            itemEditorView.Show();
+            itemEditorVm.GoToItem(SelectedItem.Id);
         }
     }
 }

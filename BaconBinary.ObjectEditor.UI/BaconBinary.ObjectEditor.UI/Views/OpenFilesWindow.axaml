@@ -29,6 +29,23 @@
                 <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseSprCommand}" Margin="8,0,0,0"/>
             </Grid>
 
+            <!-- Otb and Xml Paths -->
+            <Separator/>
+            <TextBlock Text="Item Editor (Optional)" FontWeight="Bold"/>
+            
+            <TextBlock Text="Items File (.otb)"/>
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox Grid.Column="0" Text="{Binding OtbPath}" Watermark="Path to .otb file"/>
+                <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseOtbCommand}" Margin="8,0,0,0"/>
+            </Grid>
+            
+            <TextBlock Text="Items XML File (.xml)"/>
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox Grid.Column="0" Text="{Binding XmlPath}" Watermark="Path to .xml file"/>
+                <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseXmlCommand}" Margin="8,0,0,0"/>
+            </Grid>
+            <Separator/>
+
             <!-- Version & Encryption -->
             <Grid ColumnDefinitions="*, 20, *">
                 <StackPanel Grid.Column="0">

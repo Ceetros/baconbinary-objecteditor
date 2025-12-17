@@ -64,6 +64,10 @@
                         <MenuItem Header="Create">
                             <MenuItem Header="New Object..." Command="{Binding OpenImportWindowCommand}"/>
                         </MenuItem>
+
+                        <MenuItem Header="Tools">
+                            <MenuItem Header="Open Item Editor" Command="{Binding OpenItemEditorCommand}" IsEnabled="{Binding ItemEditorEnabled}"/>
+                        </MenuItem>
                         
                         <MenuItem Header="Help">
                             <MenuItem Header="About" Command="{Binding OpenAboutCommand}"/>
@@ -114,7 +118,7 @@
                                     <CheckBox Content="Always Animate" IsChecked="{Binding SelectedItem.AnimateAlways, FallbackValue=False}"/>
                                 </StackPanel>
                                 
-                                <Separator Background="{DynamicResource BorderBrush}" Height="1"/>
+                                <Separator/>
                                 
                                 <!-- Item-Specific Properties -->
                                 <StackPanel Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
@@ -132,8 +136,8 @@
                                     </UniformGrid>
                                 </StackPanel>
                                 
-                                <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}" Background="{DynamicResource BorderBrush}" Height="1"/>
-                                
+                                <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}"/>
+
                                 <StackPanel Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
                                     <TextBlock Text="Movement &amp; Collision" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
                                     <UniformGrid Columns="2">
@@ -144,7 +148,7 @@
                                     </UniformGrid>
                                 </StackPanel>
 
-                                <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}" Background="{DynamicResource BorderBrush}" Height="1"/>
+                                <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}"/>
 
                                 <StackPanel Spacing="5" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
                                     <TextBlock Text="Visual" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
@@ -159,11 +163,10 @@
                                     </UniformGrid>
                                 </StackPanel>
                                 
-                                <Separator Background="{DynamicResource BorderBrush}" Height="1"/>
+                                <Separator/>
 
                                 <StackPanel Spacing="8">
                                     <TextBlock Text="Displacement" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
-                                    <CheckBox Content="Has Offset" IsChecked="{Binding SelectedItem.HasOffset, FallbackValue=False}"/>
                                     <Grid ColumnDefinitions="*, 10, *">
                                         <StackPanel Grid.Column="0">
                                             <TextBlock Text="Offset X" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
@@ -176,11 +179,10 @@
                                     </Grid>
                                 </StackPanel>
 
-                                <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}" Background="{DynamicResource BorderBrush}" Height="1"/>
+                                <Separator IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}"/>
 
                                 <StackPanel Spacing="8" IsVisible="{Binding SelectedCategoryIndex, Converter={StaticResource CategoryToVisibilityConverter}, ConverterParameter=0}">
                                     <TextBlock Text="Market" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
-                                    <CheckBox Content="Is Market Item" IsChecked="{Binding SelectedItem.IsMarketItem, FallbackValue=False}"/>
                                     <TextBox Text="{Binding SelectedItem.MarketName, FallbackValue=''}" Watermark="Market Name" IsEnabled="{Binding SelectedItem.IsMarketItem, FallbackValue=False}"/>
                                     <UniformGrid Columns="2">
                                         <StackPanel Margin="0,0,5,0">
@@ -261,6 +263,9 @@
                                         <ContextMenu>
                                             <MenuItem Header="Edit Item" Command="{Binding $parent[ListBox].DataContext.EditItemCommand}"/>
                                             <MenuItem Header="Copy ID"/>
+                                            <Separator/>
+                                            <MenuItem Header="Create New Server Item" Command="{Binding $parent[ListBox].DataContext.CreateNewServerItemCommand}" IsEnabled="{Binding $parent[ListBox].DataContext.ItemEditorEnabled}"/>
+                                            <MenuItem Header="Go to Server Item" Command="{Binding $parent[ListBox].DataContext.GoToServerItemCommand}" IsVisible="{Binding HasServerItem}" IsEnabled="{Binding $parent[ListBox].DataContext.ItemEditorEnabled}"/>
                                         </ContextMenu>
                                     </Border.ContextMenu>
                                     <Image Source="{Binding ., Converter={StaticResource ThingToBitmapConverter}}" 

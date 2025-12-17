@@ -17,6 +17,8 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         
         [ObservableProperty] private string _datPath;
         [ObservableProperty] private string _sprPath;
+        [ObservableProperty] private string _otbPath;
+        [ObservableProperty] private string _xmlPath;
         [ObservableProperty] private string _detectedVersion = "Unknown";
         [ObservableProperty] private bool _isSprPathEnabled = true;
         
@@ -45,12 +47,14 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 ShowTransparencyOption = true;
                 DetectDatInfo(value);
                 
-                // Auto-select .spr if it exists
                 string sprCandidate = Path.ChangeExtension(value, ".spr");
-                if (File.Exists(sprCandidate))
-                {
-                    SprPath = sprCandidate;
-                }
+                if (File.Exists(sprCandidate)) SprPath = sprCandidate;
+                
+                string otbCandidate = Path.ChangeExtension(value, ".otb");
+                if (File.Exists(otbCandidate)) OtbPath = otbCandidate;
+                
+                string xmlCandidate = Path.ChangeExtension(value, ".xml");
+                if (File.Exists(xmlCandidate)) XmlPath = xmlCandidate;
             }
         }
 
@@ -84,7 +88,6 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                 string version = ClientVersionRepository.DetectVersion(path);
                 DetectedVersion = string.IsNullOrEmpty(version) ? "Unknown" : version;
                 
-                // Auto-detect transparency based on version (7.70+ usually has it)
                 if (double.TryParse(version, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double v))
                 {
                     UseTransparency = v >= 7.70;
@@ -128,6 +131,36 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             if (result.Count > 0)
             {
                 SprPath = result[0].Path.LocalPath;
+            }
+        }
+        
+        [RelayCommand]
+        private async Task BrowseOtb()
+        {
+            var result = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Select items.otb",
+                FileTypeFilter = new[] { new FilePickerFileType("OTB Files") { Patterns = new[] { "*.otb" } } }
+            });
+
+            if (result.Count > 0)
+            {
+                OtbPath = result[0].Path.LocalPath;
+            }
+        }
+        
+        [RelayCommand]
+        private async Task BrowseXml()
+        {
+            var result = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Select items.xml",
+                FileTypeFilter = new[] { new FilePickerFileType("XML Files") { Patterns = new[] { "*.xml" } } }
+            });
+
+            if (result.Count > 0)
+            {
+                XmlPath = result[0].Path.LocalPath;
             }
         }
 
