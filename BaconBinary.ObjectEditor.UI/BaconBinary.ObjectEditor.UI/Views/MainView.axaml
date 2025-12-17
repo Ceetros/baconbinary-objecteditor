@@ -63,9 +63,6 @@
                         
                         <MenuItem Header="Create">
                             <MenuItem Header="New Object..." Command="{Binding OpenImportWindowCommand}"/>
-                            <MenuItem Header="Import Sprites..." Command="{Binding ImportSpritesCommand}"/>
-                            <MenuItem Header="New Item"/>
-                            <MenuItem Header="New Outfit"/>
                         </MenuItem>
                         
                         <MenuItem Header="Help">

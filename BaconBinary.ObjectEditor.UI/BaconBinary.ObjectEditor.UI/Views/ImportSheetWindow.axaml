@@ -27,7 +27,7 @@
                     <TextBlock Text="Optional: Drag &amp; Drop Sprite Sheet Here" IsVisible="{Binding !IsFileSelected}"/>
                     <TextBlock Text="{Binding FilePath}" TextTrimming="CharacterEllipsis" IsVisible="{Binding IsFileSelected}"/>
                     <TextBlock Text="or" HorizontalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                    <Button Content="Browse for File..." Command="{Binding BrowseFileCommand}" 
+                    <Button Content="Browse for File..." HorizontalAlignment="Center" Command="{Binding BrowseFileCommand}" 
                             CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"/>
                 </StackPanel>
             </Border>

@@ -42,9 +42,8 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         
         private readonly DispatcherTimer _animationTimer;
         
-        // Editor State
         [ObservableProperty] private int _currentFrameIndex = 0;
-        [ObservableProperty] private int _currentDirection = 2; // Pattern X
+        [ObservableProperty] private int _currentDirection = 2;
         [ObservableProperty] private int _currentPatternY = 0;
         [ObservableProperty] private int _currentPatternZ = 0;
         [ObservableProperty] private bool _isPlaying;
@@ -71,8 +70,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
         public ObservableCollection<ThingType> MainViewItems { get; } = new();
         public ObservableCollection<ThingType> EditorItems { get; } = new();
         public ObservableCollection<uint> SpriteIds { get; } = new();
-
-        // Pagination Properties
+        
         [ObservableProperty] private int _mainViewCurrentPage = 1;
         [ObservableProperty] private int _mainViewTotalPages = 1;
         [ObservableProperty] private int _mainViewItemsPerPage = 200;
@@ -362,7 +360,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             }
             else
             {
-                // Browser logic...
+                // TODO: Browser
             }
 
             await LoadProject(datPath, sprPath, version, key, useTransparency);
@@ -387,7 +385,6 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                     }
                     else
                     {
-                        // Set features BEFORE reading
                         ushort versionNumber = ushort.Parse(version.Replace(".", ""));
                         ClientFeatures.SetVersion(versionNumber);
                         ClientFeatures.Transparency = useTransparency;
@@ -466,10 +463,10 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                     string sprPath = Path.Combine(outputPath, "Tibia.spr");
                     await ExecuteCompilation(datPath, sprPath, false, null);
                 }
-                else // BSUIT Format
+                else
                 {
                     string metaPath = Path.Combine(outputPath, "project.meta");
-                    string assetPath = Path.Combine(outputPath, "project.asset"); // Base path for assets
+                    string assetPath = Path.Combine(outputPath, "project.asset");
                     await ExecuteCompilation(metaPath, assetPath, true, optionsVm.EncryptionKey);
                 }
             }
@@ -612,9 +609,8 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                         SpriteCount = _loadedSprFile.SpriteCount;
                         IsLoading = false;
                         
-                        // Refresh sprite palette
                         TotalSpritePages = (int)Math.Ceiling((double)SpriteCount / SpritesPerPage);
-                        LoadSpritePage(TotalSpritePages); // Go to last page
+                        LoadSpritePage(TotalSpritePages);
                     });
                 });
             }
@@ -659,7 +655,6 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
 
             try
             {
-                // Run heavy processing in background
                 await Task.Run(() =>
                 {
                     SKBitmap bgraBitmap = null;
@@ -680,7 +675,6 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
 
                     var newSpritesMap = new ConcurrentDictionary<uint, Sprite>();
                     
-                    // Calculate total sprites needed for the object
                     int totalSprites = vm.Width * vm.Height * vm.Layers * vm.PatternX * vm.PatternY * vm.PatternZ * vm.Frames;
                     
                     uint startId = _loadedSprFile.SpriteCount + 1;
@@ -689,8 +683,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                     var tasks = new List<Action>();
                     var orderedIds = new uint[totalSprites];
                     int spriteIndex = 0;
-
-                    // If we have a bitmap, prepare for extraction
+                    
                     IntPtr pixelsPtr = IntPtr.Zero;
                     int rowBytes = 0;
                     int bpp = 4;
@@ -714,8 +707,6 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                     for (int px = 0; px < vm.PatternX; px++)
                     for (int l = 0; l < vm.Layers; l++)
                     {
-                        // Calculate linear index for the block (Frame/Pattern combination)
-                        // Standard Tibia order: Frames -> Z -> Y -> X -> Layers
                         int blockIndex = (((f * vm.PatternZ + z) * vm.PatternY + py) * vm.PatternX + px) * vm.Layers + l;
                         
                         int fx = 0, fy = 0;
@@ -732,7 +723,6 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                             uint currentId = startId + (uint)currentIndex;
                             orderedIds[currentIndex] = currentId;
                             
-                            // Capture loop variables
                             int cw = w, ch = h;
                             
                             tasks.Add(() => 
@@ -741,7 +731,6 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                                 
                                 if (bgraBitmap != null)
                                 {
-                                    // Calculate Sprite Position within Block (Inverted)
                                     int pX = (vm.Width - cw - 1) * 32;
                                     int pY = (vm.Height - ch - 1) * 32;
                                     
@@ -763,9 +752,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
                                             }
                                         }
                                     }
-                                    // Else: rawPixels remains empty (transparent)
                                 }
-                                // Else: rawPixels remains empty (transparent) for blank object creation
 
                                 byte[] compressedData = SpriteCompressor.Compress(rawPixels, ClientFeatures.Transparency);
                                 var newSprite = new Sprite(currentId, ClientFeatures.Transparency) 
@@ -909,10 +896,9 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             {
                 SelectedItem.ApplyProps(TempProps);
                 SelectedItem.FrameGroups = TempProps.FrameGroups;
-                IsDirty = false; // Reset dirty state after saving
+                IsDirty = false;
                 StatusText = $"Item {SelectedItem.Id} saved to memory.";
                 
-                // Re-clone to keep TempProps in sync with the new state of SelectedItem
                 TempProps = SelectedItem.Clone();
                 UpdateComposerSlots();
             }
@@ -977,12 +963,7 @@ namespace BaconBinary.ObjectEditor.UI.ViewModels
             RefreshList();
             if (IsEditing) LoadEditorPage(1);
         }
-
-        private async Task LoadDataInternal(string datPath, string sprPath, string version)
-        {
-            // This method is now a legacy wrapper
-            await LoadProject(datPath, sprPath, version, null, false);
-        }
+        
 
         private void LoadSpritePage(int page)
         {
